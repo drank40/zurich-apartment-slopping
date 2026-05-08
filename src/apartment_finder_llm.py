@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urljoin, urlparse, urlencode
 
 import requests
-from huggingface_hub import InferenceClient
+#from huggingface_hub import InferenceClient
 import yaml
 from bs4 import BeautifulSoup
 from dateutil import parser as dt_parser
@@ -674,7 +674,123 @@ def listing_passes_filters(listing: Listing, criteria: Dict[str, Any]) -> Tuple[
         if actual_val is False: reasons.append(error_msg)
     return len(reasons) == 0, reasons
 
-def run(config_path: Path, providers_override: Optional[List[str]] = None, limit: Optional[int] = None, use_llm: Optional[bool] = None):
+def search_provider_via_api(provider: str, p_cfg: Dict[str, Any], limit: Optional[int] = None) -> Tuple[List[Listing], bool]:
+    """Run a provider search using the new JSON API clients.
+
+    Returns ``(listings, used_api)``. If the API path is unavailable
+    (e.g. provider not yet ported, missing cookies) returns ``([], False)``
+    and the caller should fall back to the Playwright HTML path.
+    """
+    try:
+        # Make sure ``src/`` is on sys.path so ``providers`` resolves whether
+        # the script is run as ``python src/apartment_finder_llm.py`` or as
+        # ``python -m src.apartment_finder_llm`` from the project root.
+        import sys as _sys, os as _os
+        _here = _os.path.dirname(_os.path.abspath(__file__))
+        if _here not in _sys.path:
+            _sys.path.insert(0, _here)
+
+        from providers.flatfox_api import (
+            FlatfoxClient,
+            mapping_to_listing as flatfox_to_listing,
+        )
+        from providers.homegate_api import (
+            HomegateClient,
+            HomegateBotChallenge,
+            bootstrap_datadome_cookie,
+            build_query_from_config,
+            mapping_to_listing as homegate_to_listing,
+        )
+        from providers.comparis_api import (
+            ComparisClient,
+            mapping_to_listing as comparis_to_listing,
+        )
+    except ImportError as e:
+        logger.warning(f"API providers module unavailable: {e}; falling back to HTML scrape")
+        return [], False
+
+    if provider == "flatfox":
+        params = dict(p_cfg.get("params") or {})
+        # The pin endpoint takes max_count; the legacy config used `take`
+        if "take" in params and "max_count" not in params:
+            params["max_count"] = params.pop("take")
+        params.setdefault("max_count", 1000)
+        client = FlatfoxClient(rate_delay=p_cfg.get("api_rate_delay", 0.5))
+        try:
+            raw = client.search(params, limit=limit)
+        except Exception as e:
+            logger.error(f"[flatfox] API call failed: {e}")
+            return [], False
+        listings = [flatfox_to_listing(r, Listing) for r in raw]
+        return listings, True
+
+    if provider == "homegate":
+        # Try to read or bootstrap a datadome cookie
+        cookies_file = (p_cfg.get("playwright") or {}).get("cookies_file") or "cookies_homegate.txt"
+        dd_cookie = None
+        if Path(cookies_file).exists():
+            for part in Path(cookies_file).read_text(encoding="utf-8").strip().split(";"):
+                if "=" in part:
+                    name, value = part.strip().split("=", 1)
+                    if name.strip() == "datadome":
+                        dd_cookie = value.strip()
+                        break
+        if not dd_cookie:
+            logger.info("[homegate] No datadome cookie cached; bootstrapping via Playwright...")
+            pw_cfg = p_cfg.get("playwright") or {}
+            dd_cookie = bootstrap_datadome_cookie(headless=bool(pw_cfg.get("headless", False)))
+            if dd_cookie:
+                Path(cookies_file).write_text(f"datadome={dd_cookie}", encoding="utf-8")
+                logger.info(f"[homegate] Saved datadome cookie to {cookies_file}")
+        if not dd_cookie:
+            logger.warning("[homegate] No datadome cookie available; falling back to HTML scrape")
+            return [], False
+
+        client = HomegateClient(datadome_cookie=dd_cookie, rate_delay=1.0)
+        query = build_query_from_config(p_cfg)
+        try:
+            raw = client.search(query, limit=limit)
+        except HomegateBotChallenge:
+            logger.warning("[homegate] DataDome challenge; refreshing cookie...")
+            dd_cookie = bootstrap_datadome_cookie(headless=False)
+            if not dd_cookie:
+                return [], False
+            Path(cookies_file).write_text(f"datadome={dd_cookie}", encoding="utf-8")
+            client = HomegateClient(datadome_cookie=dd_cookie, rate_delay=1.0)
+            try:
+                raw = client.search(query, limit=limit)
+            except Exception as e:
+                logger.error(f"[homegate] Retry failed: {e}")
+                return [], False
+        except Exception as e:
+            logger.error(f"[homegate] API call failed: {e}")
+            return [], False
+        listings = [homegate_to_listing(r, Listing) for r in raw]
+        return listings, True
+
+    if provider == "comparis":
+        request_object = p_cfg.get("request_object") or {}
+        if not request_object:
+            return [], False
+        pw_cfg = p_cfg.get("playwright") or {}
+        try:
+            with ComparisClient(
+                headless=bool(pw_cfg.get("headless", False)),
+                cookies_file=pw_cfg.get("cookies_file"),
+                manual_continue=bool(pw_cfg.get("manual_continue", False)),
+                challenge_wait_s=float(pw_cfg.get("challenge_wait_seconds", 30)),
+            ) as client:
+                raw = client.search(request_object, limit=limit)
+        except Exception as e:
+            logger.error(f"[comparis] API call failed: {e}")
+            return [], False
+        listings = [comparis_to_listing(r, Listing) for r in raw if not r.get("_partial")]
+        return listings, True
+
+    return [], False
+
+
+def run(config_path: Path, providers_override: Optional[List[str]] = None, limit: Optional[int] = None, use_llm: Optional[bool] = None, force_legacy: bool = False):
     cfg = load_config(config_path)
     search_cfg = cfg.get("search", {})
     criteria = cfg.get("criteria", {})
@@ -693,36 +809,47 @@ def run(config_path: Path, providers_override: Optional[List[str]] = None, limit
     for provider in providers:
         if provider not in search_cfg: continue
         p_cfg = search_cfg[provider]
-        base_search_url = p_cfg.get("base_url")
-        params = p_cfg.get("params", {}).copy()
-        page, has_next, provider_listings = 1, True, []
-        logger.info(f"Starting {provider} search...")
-        while has_next and page <= 25:
-            if provider == "homegate": params["ep"] = page
-            if provider == "comparis" and "request_object" in p_cfg: params["requestobject"] = json.dumps(p_cfg["request_object"])
-            search_url = f"{base_search_url}?{urlencode(params)}"
-            logger.info(f"[{provider}] Fetching page {page}...")
-            html = fetch_with_playwright(search_url, p_cfg.get("playwright", {}))
-            if not html: break
-            if provider == "flatfox":
-                found = parse_listings_from_html(urljoin(search_url, "/"), html)
-                has_next = False
-            elif provider == "homegate":
-                found, has_next, total = parse_listings_from_html_homegate(urljoin(search_url, "/"), html)
-                logger.info(f"[{provider}] Found {len(found)} listings on page {page} (Total: {total})")
-            elif provider == "comparis":
-                found, has_next, total = parse_listings_from_html_comparis(urljoin(search_url, "/"), html)
-                logger.info(f"[{provider}] Found {len(found)} listings.")
-                has_next = False
-            else: found, has_next = [], False
-            provider_listings.extend(found)
-            if limit and len(provider_listings) >= limit:
-                logger.info(f"[{provider}] Reached limit of {limit} listings.")
-                provider_listings = provider_listings[:limit]
-                break
-            if not has_next: break
-            page += 1
-            time.sleep(1)
+
+        provider_listings: List[Listing] = []
+        used_api = False
+        if not force_legacy:
+            logger.info(f"[{provider}] Trying API path...")
+            provider_listings, used_api = search_provider_via_api(provider, p_cfg, limit=limit)
+            if used_api:
+                logger.info(f"[{provider}] API search returned {len(provider_listings)} listings")
+
+        if not used_api:
+            # Legacy Playwright + HTML scrape fallback
+            base_search_url = p_cfg.get("base_url")
+            params = p_cfg.get("params", {}).copy()
+            page, has_next = 1, True
+            logger.info(f"[{provider}] Starting legacy Playwright HTML search...")
+            while has_next and page <= 25:
+                if provider == "homegate": params["ep"] = page
+                if provider == "comparis" and "request_object" in p_cfg: params["requestobject"] = json.dumps(p_cfg["request_object"])
+                search_url = f"{base_search_url}?{urlencode(params)}"
+                logger.info(f"[{provider}] Fetching page {page}...")
+                html = fetch_with_playwright(search_url, p_cfg.get("playwright", {}))
+                if not html: break
+                if provider == "flatfox":
+                    found = parse_listings_from_html(urljoin(search_url, "/"), html)
+                    has_next = False
+                elif provider == "homegate":
+                    found, has_next, total = parse_listings_from_html_homegate(urljoin(search_url, "/"), html)
+                    logger.info(f"[{provider}] Found {len(found)} listings on page {page} (Total: {total})")
+                elif provider == "comparis":
+                    found, has_next, total = parse_listings_from_html_comparis(urljoin(search_url, "/"), html)
+                    logger.info(f"[{provider}] Found {len(found)} listings.")
+                    has_next = False
+                else: found, has_next = [], False
+                provider_listings.extend(found)
+                if limit and len(provider_listings) >= limit:
+                    logger.info(f"[{provider}] Reached limit of {limit} listings.")
+                    provider_listings = provider_listings[:limit]
+                    break
+                if not has_next: break
+                page += 1
+                time.sleep(1)
         logger.info(f"[{provider}] Completed search. Total: {len(provider_listings)}")
         # Build a session with provider cookies so detail-page requests aren't blocked
         detail_session = requests.Session()
@@ -737,7 +864,18 @@ def run(config_path: Path, providers_override: Optional[List[str]] = None, limit
                 detail_session.cookies.set(name.strip(), value.strip(), domain=domain)
             logger.info(f"[{provider}] Loaded cookies into detail session for {domain}")
         
-        provider_pw_cfg = p_cfg.get("playwright") if p_cfg.get("use_playwright_fallback") else None
+        # If the API path supplied descriptions + coordinates, we can skip
+        # spinning up Playwright for detail fetching. Only fall back to it
+        # when at least one listing is missing core fields.
+        needs_detail_fetch = any(
+            (not l.description) or (l.lat is None or l.lon is None)
+            for l in provider_listings
+        )
+        if used_api and not needs_detail_fetch:
+            provider_pw_cfg = None
+            logger.info(f"[{provider}] API supplied full data; skipping Playwright detail fetch")
+        else:
+            provider_pw_cfg = p_cfg.get("playwright") if p_cfg.get("use_playwright_fallback") else None
         hydrate_details(provider_listings, 20, 1.0, llm_cfg, google_key, use_llm=use_llm, session=detail_session, playwright_cfg=provider_pw_cfg)
         all_listings.extend(provider_listings)
         if limit and len(all_listings) >= limit: break
@@ -771,8 +909,10 @@ if __name__ == "__main__":
     parser.add_argument("--limit", type=int)
     parser.add_argument("--no-llm", dest="no_llm", action="store_true",
                         help="Disable LLM extraction; use keyword matching only")
+    parser.add_argument("--legacy", dest="legacy", action="store_true",
+                        help="Force the old Playwright HTML-scrape path (skip API clients)")
     args = parser.parse_args()
     selected = [p.strip().lower() for p in args.providers.split(",")] if args.providers else None
     # None means "defer to config"; False means "forced off via CLI"
     use_llm_flag = False if args.no_llm else None
-    run(Path(args.config), selected, args.limit, use_llm=use_llm_flag)
+    run(Path(args.config), selected, args.limit, use_llm=use_llm_flag, force_legacy=args.legacy)

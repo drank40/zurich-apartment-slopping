@@ -1269,21 +1269,8 @@
       "structuredSeoData": null
     },
     "requestContext": {
-      "cookies": {
-        "userTrackingId": "eea79622-177c-4d3d-8085-9901d98fe44b",
-        "embeddedApp": false
-      },
-      "headers": {
-        "authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IkM4NUVDNTRERDFFNDlCRjk2NjFFODZCRjJDODUwRDg2IiwidHlwIjoiYXQrand0In0.eyJpc3MiOiJodHRwczovL2FjY291bnQubXljb21wYXJpcy5jaCIsIm5iZiI6MTc3ODI3Mjg2NiwiaWF0IjoxNzc4MjcyODY2LCJleHAiOjE3NzgyNzY0NjYsInNjb3BlIjpbImNvbXBhcmlzLXdlYnNpdGUiXSwiY2xpZW50X2lkIjoiY29tcGFyaXMtd2Vic2l0ZSIsImp0aSI6IjZEOUU5M0JDM0EyRjlGRTNEMTg4RkY1MjREMDZGOEI5In0.Hf3YM9nCUfv0Ib0LxOs9-5fqIpTC2D0FgCHozKpfbMKE6RIhAetnOXumNPTCEQtETg9C9YLO7-6OCl5qJ1DxNi2euDG7dWEcVT3UI-81QCKUvoPKZ4TeL9JNxkoryk6CXqMF3rA57lBUF6ZLifnrHgcZjGpEyZ8nHgtkHrHdQ-4ggiF2jZ5Uo2wRvF7W9SJIIcZcBOX86ySIZ3y_iym2QD7cpOhA67GyDTopfAqqwy6OhIKz-lVa5Z1Efalme4I5l7Vdvf3TEziJlbC3rHU_Ws85Tm_QHicMm7qLY2zwRo-MJb29j4gULz6lvE3LtyUb62cRfcTlfNphuu72ME26sw",
-        "cookie": "AnonymousID=gid=1e61bc79-4f02-4d20-95c0-65e9b3263bbc; UserTrackingID=gid=eea79622-177c-4d3d-8085-9901d98fe44b; __Secure-Gw-Session=CfDJ8Pak0%2F2mg4NNqzrk0wIau%2BuO%2BSo43V4qYtLhay63qy8%2BDsECKbTHQec1WIiJiW9u5NcDk9ffGbv%2FJt836kQc5zcUTcOJpyTcego8mR2Ff%2F9FKsIp%2FZSCEd4YNCtGxt2ANCgfSpCIipk5RfaRTmZ9WR4rO8lUGlKymnt8aFfnhePD; datadome=aNg_fdfq3EGVt8CaVDfVbfhjddd9CjiZV50BoN32DmjdQCK1W~PIaS1Sf471TuUg7LtgpDmPEh0Zltyv1teI7xTZsWgh2klkIdR8xKpwAPJ5oXip8mzMAFu_TMqRO1Jv",
-        "x-applicationcode": "HF",
-        "x-extclient": "comparis",
-        "x-language": "De",
-        "x-publicabsolutepath": "/immobilien/result/list",
-        "x-request-id": "b5665148-ece4-4829-b86c-eff296d366d7",
-        "x-usercontext-id": "e069491d-3737-4462-acd9-928ccd5a077b",
-        "x-csrf-token": "uwsLgocsrHc12SQuVrdu3g=="
-      }
+      "cookies": "<redacted>",
+      "headers": "<redacted>"
     },
     "isEmbedded": false,
     "localeConfig": {
@@ -3273,21 +3260,8 @@
     "breadcrumbs": [],
     "comparisPageCtx": {
       "requestContext": {
-        "cookies": {
-          "userTrackingId": "eea79622-177c-4d3d-8085-9901d98fe44b",
-          "embeddedApp": false
-        },
-        "headers": {
-          "authorization": "Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IkM4NUVDNTRERDFFNDlCRjk2NjFFODZCRjJDODUwRDg2IiwidHlwIjoiYXQrand0In0.eyJpc3MiOiJodHRwczovL2FjY291bnQubXljb21wYXJpcy5jaCIsIm5iZiI6MTc3ODI3Mjg2NiwiaWF0IjoxNzc4MjcyODY2LCJleHAiOjE3NzgyNzY0NjYsInNjb3BlIjpbImNvbXBhcmlzLXdlYnNpdGUiXSwiY2xpZW50X2lkIjoiY29tcGFyaXMtd2Vic2l0ZSIsImp0aSI6IjZEOUU5M0JDM0EyRjlGRTNEMTg4RkY1MjREMDZGOEI5In0.Hf3YM9nCUfv0Ib0LxOs9-5fqIpTC2D0FgCHozKpfbMKE6RIhAetnOXumNPTCEQtETg9C9YLO7-6OCl5qJ1DxNi2euDG7dWEcVT3UI-81QCKUvoPKZ4TeL9JNxkoryk6CXqMF3rA57lBUF6ZLifnrHgcZjGpEyZ8nHgtkHrHdQ-4ggiF2jZ5Uo2wRvF7W9SJIIcZcBOX86ySIZ3y_iym2QD7cpOhA67GyDTopfAqqwy6OhIKz-lVa5Z1Efalme4I5l7Vdvf3TEziJlbC3rHU_Ws85Tm_QHicMm7qLY2zwRo-MJb29j4gULz6lvE3LtyUb62cRfcTlfNphuu72ME26sw",
-          "cookie": "AnonymousID=gid=1e61bc79-4f02-4d20-95c0-65e9b3263bbc; UserTrackingID=gid=eea79622-177c-4d3d-8085-9901d98fe44b; __Secure-Gw-Session=CfDJ8Pak0%2F2mg4NNqzrk0wIau%2BuO%2BSo43V4qYtLhay63qy8%2BDsECKbTHQec1WIiJiW9u5NcDk9ffGbv%2FJt836kQc5zcUTcOJpyTcego8mR2Ff%2F9FKsIp%2FZSCEd4YNCtGxt2ANCgfSpCIipk5RfaRTmZ9WR4rO8lUGlKymnt8aFfnhePD; datadome=aNg_fdfq3EGVt8CaVDfVbfhjddd9CjiZV50BoN32DmjdQCK1W~PIaS1Sf471TuUg7LtgpDmPEh0Zltyv1teI7xTZsWgh2klkIdR8xKpwAPJ5oXip8mzMAFu_TMqRO1Jv",
-          "x-applicationcode": "HF",
-          "x-extclient": "comparis",
-          "x-language": "De",
-          "x-publicabsolutepath": "/immobilien/result/list",
-          "x-request-id": "b5665148-ece4-4829-b86c-eff296d366d7",
-          "x-usercontext-id": "e069491d-3737-4462-acd9-928ccd5a077b",
-          "x-csrf-token": "uwsLgocsrHc12SQuVrdu3g=="
-        }
+        "cookies": "<redacted>",
+        "headers": "<redacted>"
       },
       "lang": "de",
       "locale": "de-CH",
