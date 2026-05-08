@@ -7,10 +7,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 from urllib.parse import urlparse, urljoin
 
-try:
-    from playwright.sync_api import sync_playwright
-except ImportError:
-    sync_playwright = None
+from playwright.sync_api import sync_playwright
 
 # Configure logging
 logging.basicConfig(
@@ -278,14 +275,24 @@ def run():
     parser.set_defaults(dry_run=True)
     args = parser.parse_args()
 
-    message = Path("message_template.txt").read_text(encoding="utf-8")
-    if not message:
-        print("Nessun messaggio")
+    msg_path = Path("message_template.txt")
+    if not msg_path.exists():
+        logger.error(f"message_template.txt not found in {Path.cwd()}")
         return
-    urls = get_urls_from_markdown(Path(f"output/listings_{args.mode}_llm.md"), args.provider)
+    message = msg_path.read_text(encoding="utf-8")
+    if not message.strip():
+        logger.error("message_template.txt is empty")
+        return
+
+    listings_path = Path(f"output/listings_{args.mode}_llm.md")
+    if not listings_path.exists():
+        logger.error(f"Listings file not found: {listings_path.resolve()}")
+        return
+    urls = get_urls_from_markdown(listings_path, args.provider)
     if not urls:
-        print("Nessun indirizzo")
+        logger.error(f"No URLs for provider={args.provider} in {listings_path}")
         return
+    logger.info(f"Found {len(urls)} URLs for provider={args.provider}")
     if args.limit: urls = urls[:args.limit]
 
     cookie_file = Path(f"cookies_{args.provider}.txt")
@@ -297,8 +304,10 @@ def run():
             cookies.extend(parse_cookie_string(raw_cookie_str, f".{sub}{domain}" if sub else f".{domain}"))
         logger.info(f"Loaded {len(cookies)} cookies (broadcast injection).")
     else:
-        logger.error("Nessun cookie")
+        logger.error(f"Cookie file not found: {cookie_file.resolve()}")
         return
+
+    logger.info("Launching Chromium (headless=False)...")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)

@@ -33,6 +33,18 @@ DEFAULT_UA = (
 )
 
 
+class FlatfoxAuthError(Exception):
+    """Base for flatfox auth errors."""
+
+
+class DeviceNotVerifiedError(FlatfoxAuthError):
+    """Raised when ``flatfoxDevice`` cookie is missing or stale."""
+
+
+class LoginFailedError(FlatfoxAuthError):
+    """Raised on any other non-2xx login response."""
+
+
 class FlatfoxClient:
     """Lightweight HTTP client around flatfox.ch's public JSON API."""
 
@@ -49,6 +61,8 @@ class FlatfoxClient:
             "Accept", "application/json, text/plain, */*"
         )
         self.session.headers.setdefault("Accept-Language", "en-US,en;q=0.9")
+        self.session.headers.setdefault("Origin", API_ROOT)
+        self.session.headers.setdefault("Referer", API_ROOT + "/")
         self.timeout = timeout
         self.rate_delay = rate_delay
 
@@ -88,6 +102,8 @@ class FlatfoxClient:
         self,
         pks: Iterable[int | str],
         expand_cover_image: bool = True,
+        expand_images: bool = True,
+        expand_agency: bool = True,
         chunk_size: int = 50,
     ) -> list[dict[str, Any]]:
         """Fetch full ``public-listing`` records for the given pks.
@@ -103,6 +119,10 @@ class FlatfoxClient:
             params.append(("limit", "0"))  # disable pagination
             if expand_cover_image:
                 params.append(("expand", "cover_image"))
+            if expand_images:
+                params.append(("expand", "images"))
+            if expand_agency:
+                params.append(("expand", "agency"))
             data = self._get(LISTING_ENDPOINT, params=params)
             # Endpoint sometimes returns a list (when pk provided) and
             # sometimes a paginated object. Handle both.
@@ -131,6 +151,64 @@ class FlatfoxClient:
         listings = self.fetch_listings(pks)
         return listings
 
+    # -- common-API search --------------------------------------------------
+
+    def search_listings(self, criteria: "SearchCriteria") -> list["Listing"]:
+        """Run a search using the cross-provider ``SearchCriteria`` and
+        return normalized ``Listing`` objects.
+
+        Native filters (price, rooms, bbox, furnished/temporary, surface)
+        are pushed into the ``/api/v1/pin/`` query. Keyword and feature
+        filters are applied post-fetch on the normalized listings.
+        """
+        from .common import Listing, SearchCriteria, apply_common_filters  # local import: avoid cycles
+        assert isinstance(criteria, SearchCriteria)
+        # Translate criteria -> flatfox-native pin params.
+        ff: dict[str, Any] = {"max_count": min(criteria.page_cap, 1000)}
+        if criteria.bbox:
+            s, w, n, e = criteria.bbox
+            ff.update({"south": s, "west": w, "north": n, "east": e})
+        if criteria.min_rooms is not None:
+            ff["min_rooms"] = criteria.min_rooms
+        if criteria.max_rooms is not None:
+            ff["max_rooms"] = criteria.max_rooms
+        if criteria.min_price_chf is not None:
+            ff["min_price"] = criteria.min_price_chf
+        if criteria.max_price_chf is not None:
+            ff["max_price"] = criteria.max_price_chf
+        # Boolean flags: only push when explicitly demanded. Flatfox's
+        # ``is_furnished=true`` filters TO furnished, ``=false`` excludes
+        # furnished — so the field is unsuitable for "don't care".
+        if criteria.must_be_furnished is True:
+            ff["is_furnished"] = True
+        elif criteria.must_be_furnished is False:
+            ff["is_furnished"] = False
+        if criteria.must_be_temporary is True:
+            ff["is_temporary"] = True
+        elif criteria.must_be_temporary is False:
+            ff["is_temporary"] = False
+
+        raw = self.search(ff, limit=criteria.page_cap)
+        # Filter to apartments/houses (flatfox's pin can include PARK etc.)
+        wanted_categories = {c.upper() for c in criteria.categories}
+        if wanted_categories:
+            raw = [
+                r for r in raw
+                if (r.get("object_category") or "").upper() in wanted_categories
+            ]
+        # ZIP filter (flatfox returns the postcode in each listing)
+        if criteria.zipcodes:
+            zips = set(str(z) for z in criteria.zipcodes)
+            raw = [r for r in raw if str(r.get("zipcode") or "") in zips]
+        # Map to Listing through fetch_full_detail's normalizer logic by
+        # post-processing the ``raw`` rows directly (they already have
+        # everything the normalizer needs).
+        listings = [
+            Listing.from_dict(_flatfox_to_normalized(item))
+            for item in raw
+        ]
+        return apply_common_filters(listings, criteria)
+
     # -- detail -------------------------------------------------------------
 
     def fetch_detail(self, pk_or_url: int | str) -> dict[str, Any] | None:
@@ -141,6 +219,106 @@ class FlatfoxClient:
         data = self.fetch_listings([pk])
         return data[0] if data else None
 
+    # -- login (pure requests, JSON DRF endpoint) ---------------------------
+
+    LOGIN_ENDPOINT = "/api/v1/auth/login/"
+    ACCOUNT_ENDPOINT = "/api/v1/account/"
+
+    def login(
+        self,
+        email: str,
+        password: str,
+        device_cookie: str | None = None,
+        otp: str | None = None,
+    ) -> bool:
+        """Log in via ``POST /api/v1/auth/login/`` (dj-rest-auth-style).
+
+        Flatfox uses per-device verification: on a cold device the API
+        returns 403 ``device-not-verified`` and emails an OTP. Once the
+        device is verified once, the ``flatfoxDevice`` cookie acts as a
+        long-lived trust token — pass it via ``device_cookie`` to skip the
+        OTP step on every run. Raises :class:`DeviceNotVerifiedError` when
+        the supplied cookie is missing/stale, with an explanation of what
+        to do.
+        """
+        # Seed the device cookie BEFORE any GET so the bootstrap doesn't
+        # mint a fresh (untrusted) one.
+        if device_cookie:
+            self.session.cookies.set(
+                "flatfoxDevice", device_cookie, domain="flatfox.ch", path="/",
+            )
+
+        # Bootstrap CF cookies (__cf_bm etc). 403 is fine — Set-Cookie still applies.
+        self.session.get(
+            urljoin(API_ROOT, self.ACCOUNT_ENDPOINT),
+            timeout=self.timeout,
+            allow_redirects=False,
+        )
+
+        body: dict[str, Any] = {"email": email, "password": password}
+        if otp:
+            body["otp"] = otp
+        r = self.session.post(
+            urljoin(API_ROOT, self.LOGIN_ENDPOINT),
+            json=body,
+            timeout=self.timeout,
+        )
+        if r.status_code == 403 and "device-not-verified" in r.text:
+            raise DeviceNotVerifiedError(
+                "Flatfox refused login: 'Device not verified'. Either the "
+                "FLATFOX_DEVICE_COOKIE in .creds is missing/stale or this is "
+                "a fresh device. To refresh: log into flatfox.ch in a browser "
+                "(complete the email OTP), then copy the value of the "
+                "'flatfoxDevice' cookie from DevTools and update "
+                "FLATFOX_DEVICE_COOKIE in .creds."
+            )
+        if not r.ok:
+            try:
+                detail = r.json()
+            except Exception:
+                detail = r.text[:300]
+            raise LoginFailedError(
+                f"Flatfox login failed (HTTP {r.status_code}): {detail}"
+            )
+        ok = self._probe_authed()
+        logger.info("Flatfox login %s.", "OK" if ok else "FAILED (probe)")
+        return ok
+
+    def _probe_authed(self) -> bool:
+        try:
+            r = self.session.get(
+                urljoin(API_ROOT, self.ACCOUNT_ENDPOINT),
+                timeout=self.timeout,
+                allow_redirects=False,
+            )
+            return r.status_code == 200
+        except Exception:
+            return False
+
+    # -- normalized detail --------------------------------------------------
+
+    def fetch_full_detail(self, pk_or_url: int | str) -> dict[str, Any] | None:
+        """Return a normalized detail dict (description/price/images/address/meta).
+
+        See ``docs/api/flatfox.md`` for the source schema. This wrapper picks
+        the largest image URL and exposes a stable shape for downstream tools.
+        """
+        pk = self._extract_pk(pk_or_url)
+        if pk is None:
+            return None
+        params: list[tuple[str, str]] = [
+            ("pk", str(pk)),
+            ("limit", "0"),
+            ("expand", "cover_image"),
+            ("expand", "images"),
+            ("expand", "agency"),
+        ]
+        data = self._get(LISTING_ENDPOINT, params=params)
+        items = data if isinstance(data, list) else (data.get("results") or [])
+        if not items:
+            return None
+        return _flatfox_to_normalized(items[0])
+
     @staticmethod
     def _extract_pk(value: int | str) -> int | None:
         if isinstance(value, int):
@@ -148,14 +326,92 @@ class FlatfoxClient:
         s = str(value).strip()
         if s.isdigit():
             return int(s)
-        # Pull the last number group from common URL forms like
-        # /en/flat/<slug>/<pk>/  or  /<pk>/
         import re
-
         m = re.search(r"/(\d{4,})/?(?:\?|$)", s)
-        if m:
-            return int(m.group(1))
-        return None
+        return int(m.group(1)) if m else None
+
+
+def _flatfox_to_normalized(item: dict[str, Any]) -> dict[str, Any]:
+    """Map a flatfox public-listing dict (as returned by either /pin/ +
+    /public-listing/ or the /pin/ endpoint when listing fields are
+    embedded) to the cross-provider normalized shape.
+    """
+
+    def _img_url(img: Any) -> str:
+        # Skip unexpanded references (bare ints when ?expand=images was omitted).
+        if not isinstance(img, dict):
+            return ""
+        raw = img.get("url") or img.get("url_thumb_m") or img.get("url_listing_search")
+        return urljoin(API_ROOT, raw) if raw else ""
+
+    pk = item.get("pk")
+    images = [u for u in (_img_url(i) for i in (item.get("images") or [])) if u]
+    cover = item.get("cover_image") or {}
+    if cover and _img_url(cover) and _img_url(cover) not in images:
+        images.insert(0, _img_url(cover))
+
+    price = item.get("rent_gross") or item.get("price_display") or item.get("rent_net")
+    rent_net = item.get("rent_net")
+    rent_charges = item.get("rent_charges")
+
+    attributes = [
+        a.get("name") if isinstance(a, dict) else str(a)
+        for a in (item.get("attributes") or [])
+    ]
+
+    agency = item.get("agency") or {}
+    agency_logo = (agency.get("logo") or {}).get("url") if agency.get("logo") else None
+
+    return {
+            "provider": "flatfox",
+            "listing_id": str(pk),
+            "url": urljoin(API_ROOT, item.get("url") or item.get("short_url") or ""),
+            "submit_url": urljoin(API_ROOT, item.get("submit_url") or ""),
+            "title": (
+                item.get("public_title")
+                or item.get("description_title")
+                or item.get("short_title")
+            ),
+            "description": item.get("description") or "",
+            "price_chf": float(price) if price is not None else None,
+            "rent_net_chf": float(rent_net) if rent_net is not None else None,
+            "rent_charges_chf": float(rent_charges) if rent_charges is not None else None,
+            "currency": "CHF",
+            "rooms": float(item["number_of_rooms"]) if item.get("number_of_rooms") is not None else None,
+            "surface_living_m2": item.get("surface_living"),
+            "surface_usable_m2": item.get("surface_usable"),
+            "floor": item.get("floor"),
+            "year_built": item.get("year_built"),
+            "year_renovated": item.get("year_renovated"),
+            "available_from": item.get("moving_date"),
+            "available_from_type": item.get("moving_date_type"),
+            "is_furnished": item.get("is_furnished"),
+            "is_temporary": item.get("is_temporary"),
+            "object_category": item.get("object_category"),
+            "object_type": item.get("object_type"),
+            "address": {
+                "street": item.get("street"),
+                "zipcode": item.get("zipcode"),
+                "city": item.get("city"),
+                "country": item.get("country"),
+                "public": item.get("public_address"),
+                "lat": item.get("latitude"),
+                "lon": item.get("longitude"),
+            },
+            "images": images,
+            "attributes": attributes,
+            "agency": {
+                "name": agency.get("name") or "",
+                "name_2": agency.get("name_2") or "",
+                "street": agency.get("street") or "",
+                "zipcode": agency.get("zipcode") or "",
+                "city": agency.get("city") or "",
+                "country": agency.get("country") or "",
+                "logo_url": urljoin(API_ROOT, agency_logo) if agency_logo else None,
+            },
+            "raw": item,
+        }
+
 
 
 # ----------------------------------------------------------------------------

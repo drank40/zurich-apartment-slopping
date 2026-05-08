@@ -1,6 +1,9 @@
 .venv/
 venv/
 **/__pycache__/
+.creds
+.creds.*
+session_*.json
 .pytest_cache/
 *.log
 cookies_homegate.txt
