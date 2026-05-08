@@ -1,0 +1,593 @@
+{
+  "from": 0,
+  "size": 5,
+  "total": 312,
+  "results": [
+    {
+      "listingType": {
+        "type": "STANDARD"
+      },
+      "id": "4002964983",
+      "listing": {
+        "address": {
+          "geoCoordinates": {
+            "accuracy": "HIGH",
+            "latitude": 47.389964874151,
+            "longitude": 8.483862311565
+          },
+          "locality": "Z\u00fcrich",
+          "postalCode": "8048",
+          "street": "Bachmattstrasse 46"
+        },
+        "categories": [
+          "APARTMENT",
+          "FLAT"
+        ],
+        "characteristics": {
+          "numberOfRooms": 3
+        },
+        "id": "4002964983",
+        "localization": {
+          "de": {
+            "text": {
+              "title": "Wohnung in Z\u00fcrich",
+              "description": "The room offers complete privacy, as it can be locked and is used entirely on your own. A bed is already provided, so you can move in right away. While the room is compact, it is ideal as a quiet retreat or a practical sleeping space.-------------------------------------------Das Zimmer bietet vollst\u00e4ndige Privatsph\u00e4re, da es abschliessbar ist und ganz alleine genutzt wird. Ein Bett ist bereits vorhanden, sodass man sofort einziehen kann. Das Zimmer ist zwar kompakt, eignet sich aber ideal als ruhiger R\u00fcckzugsort oder praktische Schlafm\u00f6glichkeit.My name is Luis, I am 22 years old, a Swiss native, and I work in the financial sector. I stay in Zurich from Monday to Thursday morning and, due to my work schedule, I am usually only at home briefly and late in the evening.Dan is 24 years old, originally from the Czech Republic, and is currently studying for his Master\u2019s degree in Banking and Finance at the University of Zurich (UZH).We are both easy-going, athletic, and lead a rather quiet and structured daily routine.-------------------------------------------Mein Name ist Luis, ich bin 22 Jahre alt, geb\u00fcrtiger Schweizer und arbeite im Finanzsektor. Ich bin jeweils von Montag bis Donnerstagmorgen in Z\u00fcrich und aufgrund meiner Arbeitszeiten meist nur sp\u00e4t am Abend kurz zu Hause.Dan ist 24 Jahre alt, kommt urspr\u00fcnglich aus Tschechien und studiert seinen Master in Banking and Finance an der UZH<span id=\"acw_response_data\" aria-hidden=\"true\" style=\"width: 0; height: 0; overflow: hidden; display: inline-block; opacity: 0\"> 083 651 215 132 029 51 78 17</span>.Wir sind beide unkompliziert, sportlich und f\u00fchren einen eher ruhigen und strukturierten Alltag."
+            },
+            "attachments": [
+              {
+                "alt": "Small bedroom with a bed, white walls, radiator, and a window with a white shutter.",
+                "file": "932ca48e7c.jpeg",
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/hgonif/4002964983/image/e5a660ce0c4cc5e5ea0fd301f2d5aa15.jpg"
+              },
+              {
+                "alt": "yellow cabinets, white appliances, tiled flooring, sink, oven, countertop, window",
+                "file": "f23a8a43fc.jpeg",
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/hgonif/4002964983/image/07d341d9b9d586ca4ea4b3066e886013.jpg"
+              },
+              {
+                "alt": "Bathroom with bathtub, toilet, sink, and mirror with a shelf",
+                "file": "a690981081.jpeg",
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/hgonif/4002964983/image/98dd55882c60feda34de32c405f4dca5.jpg"
+              }
+            ]
+          },
+          "primary": "de"
+        },
+        "meta": {
+          "createdAt": "2026-02-26T17:57:02.484Z"
+        },
+        "offerType": "RENT",
+        "platforms": [
+          "homegate",
+          "alleimmobilien",
+          "home",
+          "immostreet"
+        ],
+        "prices": {
+          "rent": {
+            "gross": 650,
+            "interval": "MONTH"
+          },
+          "currency": "CHF",
+          "buy": {}
+        },
+        "valueAddedServices": {
+          "isTenantPlusListing": false,
+          "exclusiveUntil": "2026-03-05T17:57:02.484Z"
+        }
+      },
+      "listingCard": {
+        "size": "S"
+      },
+      "listingScores": {
+        "listingCompletenessScore": 4,
+        "packageScore": 1
+      },
+      "listerBranding": {
+        "isQualityPartner": false
+      }
+    },
+    {
+      "listingType": {
+        "type": "STANDARD"
+      },
+      "id": "4003146302",
+      "listing": {
+        "address": {
+          "geoCoordinates": {
+            "accuracy": "HIGH",
+            "latitude": 47.358084876154,
+            "longitude": 8.528402311568
+          },
+          "locality": "Z\u00fcrich",
+          "postalCode": "8002",
+          "street": "Steinhaldenstrasse 65"
+        },
+        "categories": [
+          "APARTMENT",
+          "SINGLE_ROOM"
+        ],
+        "characteristics": {
+          "hasParking": true,
+          "hasBalcony": true,
+          "isOldBuilding": true,
+          "livingSpace": 90,
+          "numberOfRooms": 4,
+          "arePetsAllowed": true,
+          "floor": 1,
+          "isQuiet": true
+        },
+        "id": "4003146302",
+        "localization": {
+          "de": {
+            "isMachineTranslated": false,
+            "text": {
+              "title": "BEFRISTET bis Oktober - WG-Zimmer Z\u00fcrich, Enge - Sofort verf\u00fcgbar",
+              "description": "Aufgrund meines Zusammenzugs mit der Freundin suche ich per sofort eine:n Nachmieter:in f\u00fcr mein sch\u00f6nes Zimmer in einer ruhigen WG in Z\u00fcrich Enge. Trotz zentraler Lage ist die Umgebung angenehm ruhig, mit Blauer Parkzone direkt in der N\u00e4he.Du wohnst mit drei unkomplizierten Mitbewohner:innen (alle um die 30) und einer s\u00fcssen Katze zusammen. Die WG ist ordentlich, entspannt und respektvoll. Man kann sich zur\u00fcckziehen, aber auch gerne mal gemeinsam Zeit verbringen.Das Zimmer ist hell und gem\u00fctlich, die Altbauwohnung \u00fcberzeugt mit sch\u00f6nem Holzboden, Balkon und viel Charme. M\u00f6bel k\u00f6nnen bei Interesse \u00fcbernommen werden. (Keyboard wird mitgenommen.)Highlights:\u2022 Ruhige Lage in Z\u00fcrich Enge\u2022 Balkon\u2022 Altbau mit Charme\u2022 Blaue Parkzone in der N\u00e4he\u2022 Haustiere nach Absprache m\u00f6glich\u2022 Gute \u00d6V-Anbindung &amp; Einkaufsm\u00f6glichkeiten in Gehdistanz\u2022 See, Fluss &amp; Museum Rietberg in der N\u00e4heDie Wohnung wird voraussichtlich im September renoviert, daher ist das Mietverh\u00e4ltnis befristet.Bei Interesse freue ich mich \u00fcber deine Nachricht."
+            },
+            "attachments": [
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/hgonif/4003146302/image/f595e90b64f6c69eca7b5ebab4ee35c6.jpg",
+                "file": "a501f8deb4.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/hgonif/4003146302/image/b86fa1b36420364c7e1769942b8c3d60.jpg",
+                "file": "ae75ba5643.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/hgonif/4003146302/image/f7d0199292ee242b03201687cf61b713.jpg",
+                "file": "e69ae7a0aa.jpg"
+              }
+            ]
+          },
+          "en": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Temporary until October - Shared room Zurich, Enge - Available immediately",
+              "description": "Due to my move in with my girlfriend, I am looking for a tenant to take over my room in a quiet shared apartment in Zurich Enge as soon as possible. Despite its central location, the environment is pleasantly quiet, with a blue parking zone nearby.You will be living with three uncomplicated flatmates (all around 30) and a sweet cat. The apartment is tidy, relaxed, and respectful. You can withdraw or spend time together.The room is bright and cozy, the old building convinces with a beautiful wooden floor, balcony, and plenty of charm. Furniture can be taken over if desired. (The keyboard will be taken along.)Highlights:\u2022 Quiet location in Zurich Enge\u2022 Balcony\u2022 Old building with charm\u2022 Blue parking zone nearby\u2022 Pets possible by arrangement\u2022 Good public transport connections and shopping facilities within walking distance\u2022 Lake, river, and Rietberg museum nearbyThe apartment is expected to be renovated in September, so the rental agreement is temporary.If you are interested, I look forward to your message."
+            },
+            "attachments": []
+          },
+          "it": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Temporaneo fino a ottobre - Camera condivisa Zurigo, Enge - Disponibile immediatamente",
+              "description": "A causa del mio trasloco con la mia ragazza, sto cercando un inquilino per prendere in affitto la mia stanza in un appartamento condiviso tranquillo a Zurigo Enge il prima possibile. Nonostante la sua posizione centrale, l'ambiente \u00e8 piacevolmente tranquillo, con una zona di parcheggio blu nelle vicinanze.Vivrai con tre compagni di appartamento senza problemi (tutti intorno ai 30 anni) e un gatto dolce. L'appartamento \u00e8 ordinato, rilassato e rispettoso. Puoi ritirarti o trascorrere del tempo insieme.La stanza \u00e8 luminosa e accogliente, l'edificio vecchio convince con un bel pavimento in legno, un balcone e molto charme. I mobili possono essere presi se desiderato. (La tastiera sar\u00e0 portata via.)Punti salienti:\u2022 Posizione tranquilla a Zurigo Enge\u2022 Balcone\u2022 Edificio vecchio con charme\u2022 Zona di parcheggio blu nelle vicinanze\u2022 Animali possibili su accordo\u2022 Buone connessioni di trasporto pubblico e negozi a portata di mano\u2022 Lago, fiume e museo Rietberg nelle vicinanzeL'appartamento sar\u00e0 probabilmente ristrutturato a settembre, quindi il contratto di affitto \u00e8 temporaneo.Se sei interessato, mi piacerebbe ricevere il tuo messaggio."
+            },
+            "attachments": []
+          },
+          "fr": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Temporaire jusqu'en octobre - Chambre partag\u00e9e Zurich, Enge - Disponible imm\u00e9diatement",
+              "description": "En raison de mon d\u00e9m\u00e9nagement avec ma girlfriend, je cherche un locataire pour reprendre ma chambre dans un appartement partag\u00e9 calme \u00e0 Zurich Enge d\u00e8s que possible. Malgr\u00e9 son emplacement central, l'environnement est agr\u00e9ablement calme, avec une zone de stationnement bleue \u00e0 proximit\u00e9.Vous vivrez avec trois colocataires sans complication (tous autour de 30 ans) et un chat adorable. L'appartement est rang\u00e9, d\u00e9tendu et respectueux. Vous pouvez vous retirer ou passer du temps ensemble.La chambre est lumineuse et accueillante, l'ancien b\u00e2timent convainc avec un beau parquet, un balcon et beaucoup de charme. Les meubles peuvent \u00eatre repris si d\u00e9sir\u00e9. (Le clavier sera emport\u00e9.)Points forts :\u2022 Emplacement calme \u00e0 Zurich Enge\u2022 Balcon\u2022 B\u00e2timent ancien avec charme\u2022 Zone de stationnement bleue \u00e0 proximit\u00e9\u2022 Animaux possibles sur arrangement\u2022 Bonnes connexions de transport en commun et commerces \u00e0 proximit\u00e9\u2022 Lac, rivi\u00e8re et mus\u00e9e Rietberg \u00e0 proximit\u00e9L'appartement devrait \u00eatre r\u00e9nov\u00e9 en septembre, donc le contrat de location est temporaire.Si vous \u00eates int\u00e9ress\u00e9, je me r\u00e9jouis de votre message."
+            },
+            "attachments": []
+          },
+          "primary": "de"
+        },
+        "meta": {
+          "createdAt": "2026-05-08T12:42:53.345Z"
+        },
+        "offerType": "RENT",
+        "platforms": [
+          "immoscout24",
+          "homegate",
+          "alleimmobilien",
+          "home",
+          "immostreet"
+        ],
+        "prices": {
+          "rent": {
+            "gross": 990,
+            "interval": "MONTH"
+          },
+          "currency": "CHF",
+          "buy": {}
+        },
+        "valueAddedServices": {
+          "isTenantPlusListing": true,
+          "exclusiveUntil": "2026-05-15T12:42:53.345Z"
+        }
+      },
+      "listingCard": {
+        "size": "S"
+      },
+      "listingScores": {
+        "listingCompletenessScore": 4,
+        "packageScore": 1
+      },
+      "listerBranding": {
+        "isQualityPartner": false
+      }
+    },
+    {
+      "listingType": {
+        "type": "STANDARD"
+      },
+      "id": "4003048895",
+      "listing": {
+        "address": {
+          "geoCoordinates": {
+            "accuracy": "LOW",
+            "latitude": 47.387214876154,
+            "longitude": 8.483732311564
+          },
+          "locality": "Z\u00fcrich",
+          "postalCode": "8048"
+        },
+        "categories": [
+          "APARTMENT",
+          "FLAT",
+          "SINGLE_ROOM"
+        ],
+        "characteristics": {
+          "livingSpace": 150,
+          "numberOfRooms": 5
+        },
+        "id": "4003048895",
+        "localization": {
+          "de": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Zimmer in einem gemeinsam genutzten Haus mit Garten, 15 Minuten bis zum Z\u00fcrcher Hauptbahnhof",
+              "description": "Wir vermieten ein Zimmer in einem gemeinsam genutzten Haus mit einem privaten Garten in Altstetten, das Raum, Ruhe und schnellen Zugang zur Stadt bietet.Da wir das gesamte Haus f\u00fcr uns haben, ist dies eine seltene Konstellation im Vergleich zu typischen Wohnungen, mit mehr Platz, Au\u00dfenbereich und einer ruhigeren Umgebung.Was Sie hier finden:Privater Garten, ideal f\u00fcr Sommerabende, BBQ, EntspannungRuhige Wohngegend (kein Verkehrsl\u00e4rm / Stra\u00dfenbahn)15 Minuten bis zum Z\u00fcrcher HauptbahnhofDirekter Zugang zur Natur (Werdinsel, Uetliberg, Landschaft)Lage:3 Minuten Fu\u00dfweg zur Stra\u00dfenbahn (Farbhof)5 Minuten Fahrrad bis zum Bahnhof Altstetten58 Minuten Zug bis zum HauptbahnhofCoop &amp; Migros in der N\u00e4heDetails:Miete: 1200 CHF (inklusive)Verf\u00fcgbar: ab Mitte AprilPrivates WCKostenloses Parken vor dem HausPrivate W\u00e4sche (kein gemeinsamer Waschplan)Wohngemeinschaft:Wir sind Marco, Christoph und Maxime, etwa 30 (berufst\u00e4tig). Die Atmosph\u00e4re ist entspannt und gesellig, wir machen:gelegentliche Abendessen / Getr\u00e4nkeaktives Leben (Sport, See, Outdoor)jeder hat seinen eigenen Routine und Unabh\u00e4ngigkeitWir suchen nachJemand (ca. 25-35), der:arbeitetist entspannt, sauber und zuverl\u00e4ssigeine freundliche Wohngemeinschaft genie\u00dft, aber pers\u00f6nlichen Raum sch\u00e4tztWir machen diese Woche Besichtigungen und entscheiden uns schnell.Wenn Sie interessiert sind, senden Sie uns eine kurze Beschreibung von sich. Wenn es ein guter Match ist, w\u00fcrden wir uns freuen, Sie zu uns einzuladen, um uns kennenzulernen!",
+              "situation": "Keine Informationen verf\u00fcgbar"
+            },
+            "attachments": []
+          },
+          "en": {
+            "isMachineTranslated": false,
+            "text": {
+              "title": "Room in Shared House with Garden  15 min to Zurich HB",
+              "description": "We are renting a room in a shared house with a private garden in Altstetten, combining space, calm and fast access to the city.As we have the entire house for ourself, this is a rare setup compared to typical apartments, more space, outdoor area and a quieter environment.What you can find here:Private garden, ideal for summer evenings, BBQ, relaxingQuiet residential area (no traffic / tram noise)15 minutes to Zurich HBDirect access to nature (Werdinsel, Uetliberg, countryside)Location:3 min walk to tram (Farbhof)5 min bike to Altstetten station58 min train to HBCoop &amp; Migros nearbyDetails:Rent: 1200 CHF (all included)Available: from mid AprilPrivate toiletteFree parking in front of the housePrivate laundry (no shared building schedule)Flatshare:We are Marco, Christoph and Maxime, around 30 (working). The atmosphere is relaxed and social, we do:occasional dinners / drinksactive lifestyle (sports, lake, outdoors)everyone has their own routine and independenceWho were looking forSomeone (approx. 2535) who:worksis easygoing, clean and reliableenjoys a friendly WG but values personal spaceWere doing viewings this week and will decide quickly.If youre interested, send us a short description of yourself. If its a good match, wed love to invite you over to meet us!"
+            },
+            "attachments": [
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/tuttifill/4003048895/image/f281b117de3346923cbc8fa8f7e48e0e.jpg",
+                "file": "tutti_orig_0772218408.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/tuttifill/4003048895/image/ba58191c9365390573fa75ac095ece21.jpg",
+                "file": "tutti_orig_2726058580.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/tuttifill/4003048895/image/e240e70a9b7b8551df8ea0a580fe8f8e.jpg",
+                "file": "tutti_orig_3940074001.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/tuttifill/4003048895/image/9e9b87931868cdb3208515f59e6b18f4.jpg",
+                "file": "tutti_orig_7000213083.jpg"
+              }
+            ]
+          },
+          "it": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Camera in una casa condivisa con giardino, 15 minuti a piedi dalla stazione centrale di Zurigo",
+              "description": "Affittiamo una camera in una casa condivisa con giardino privato ad Altstetten, che offre spazio, calma e accesso rapido alla citt\u00e0.Poich\u00e9 abbiamo tutta la casa per noi, \u00e8 una configurazione rara rispetto agli appartamenti tipici, con pi\u00f9 spazio, area esterna e un ambiente pi\u00f9 calmo.Cosa potete trovare qui:Giardino privato, ideale per le serate estive, il BBQ, il relaxQuartiere residenziale calmo (nessun rumore di traffico / tram)15 minuti fino alla stazione centrale di ZurigoAccesso diretto alla natura (Werdinsel, Uetliberg, campagna)Posizione:3 minuti a piedi dal tram (Farbhof)5 minuti in bicicletta fino alla stazione di Altstetten58 minuti in treno fino alla stazione centraleCoop &amp; Migros nelle vicinanzeDettagli:Affitto: 1200 CHF (tutte le spese incluse)Disponibile: da met\u00e0 aprileToilette privataParcheggio gratuito davanti alla casaLavanderia privata (nessun piano di lavanderia condiviso)Coinquiline:Siamo Marco, Christoph e Maxime, circa 30 anni (lavoratori). L'atmosfera \u00e8 rilassata e sociale, facciamo:cene / drink occasionalivita attiva (sport, lago, all'aperto)ognuno ha la sua routine e indipendenzaCerchiamoQualcuno (circa 25-35 anni) che:lavora\u00e8 rilassato, pulito e affidabileapprezza una convivenza amichevole ma valorizza lo spazio personaleFacciamo visite questa settimana e decideremo rapidamente.Se siete interessati, inviateci una breve descrizione di voi. Se \u00e8 un buon match, saremmo felici di invitarvi a conoscerci!",
+              "situation": "Nessuna informazione disponibile"
+            },
+            "attachments": []
+          },
+          "fr": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Chambre dans une maison partag\u00e9e avec jardin, 15 minutes \u00e0 pied de la gare centrale de Zurich",
+              "description": "Nous louons une chambre dans une maison partag\u00e9e avec un jardin priv\u00e9 \u00e0 Altstetten, qui offre de l'espace, du calme et un acc\u00e8s rapide \u00e0 la ville.Puisque nous avons toute la maison pour nous, c'est une configuration rare par rapport aux appartements typiques, avec plus d'espace, de zone ext\u00e9rieure et un environnement plus calme.Ce que vous pouvez trouver ici:Jardin priv\u00e9, id\u00e9al pour les soir\u00e9es d'\u00e9t\u00e9, les BBQ, la d\u00e9tenteQuartier r\u00e9sidentiel calme (pas de bruit de circulation / tramway)15 minutes jusqu'\u00e0 la gare centrale de ZurichAcc\u00e8s direct \u00e0 la nature (Werdinsel, Uetliberg, campagne)Emplacement:3 minutes \u00e0 pied du tramway (Farbhof)5 minutes \u00e0 v\u00e9lo jusqu'\u00e0 la gare d'Altstetten58 minutes en train jusqu'\u00e0 la gare centraleCoop &amp; Migros \u00e0 proximit\u00e9D\u00e9tails:Loyer: 1200 CHF (toutes charges comprises)Disponible: \u00e0 partir de la mi-avrilToilettes priv\u00e9esStationnement gratuit devant la maisonBuanderie priv\u00e9e (pas de planning de buanderie partag\u00e9)Colocation:Nous sommes Marco, Christoph et Maxime, environ 30 ans (actifs). L'atmosph\u00e8re est d\u00e9tendue et conviviale, nous faisons:des d\u00eeners / boissons occasionnelsun mode de vie actif (sport, lac, plein air)chacun a sa propre routine et ind\u00e9pendanceNous recherchonsQuelqu'un (environ 25-35 ans) qui:travailleest d\u00e9contract\u00e9, propre et fiableappr\u00e9cie une colocation amicale mais valorise l'espace personnelNous faisons des visites cette semaine et allons d\u00e9cider rapidement.Si vous \u00eates int\u00e9ress\u00e9, envoyez-nous une br\u00e8ve description de vous. Si c'est un bon match, nous serions ravis de vous inviter \u00e0 nous rencontrer!",
+              "situation": "Aucune information disponible"
+            },
+            "attachments": []
+          },
+          "primary": "en"
+        },
+        "meta": {
+          "createdAt": "2026-03-31T13:12:38.546Z"
+        },
+        "offerType": "RENT",
+        "platforms": [
+          "homegate",
+          "immoscout24",
+          "alleimmobilien",
+          "home",
+          "immostreet",
+          "flatfox"
+        ],
+        "prices": {
+          "rent": {
+            "area": "ALL",
+            "gross": 1200,
+            "interval": "MONTH"
+          },
+          "currency": "CHF"
+        },
+        "valueAddedServices": {
+          "isTenantPlusListing": false,
+          "exclusiveUntil": "2026-04-07T13:04:51.872Z"
+        }
+      },
+      "listingCard": {
+        "size": "S"
+      },
+      "listingScores": {
+        "listingCompletenessScore": 2.5,
+        "packageScore": 0
+      },
+      "listerBranding": {
+        "logoUrl": "https://media2.homegate.ch/t_customer_logo/logos/l_tuttifill_v0.png",
+        "isQualityPartner": false,
+        "subscriptionType": "Starter_old",
+        "isPremiumBranding": false,
+        "basePackage": "RE_STARTER"
+      }
+    },
+    {
+      "listingType": {
+        "type": "STANDARD"
+      },
+      "id": "4003141011",
+      "listing": {
+        "address": {
+          "geoCoordinates": {
+            "accuracy": "HIGH",
+            "latitude": 47.347328870158,
+            "longitude": 8.566972311568
+          },
+          "locality": "Z\u00fcrich",
+          "postalCode": "8008",
+          "street": "Zollikerstr. 253"
+        },
+        "categories": [
+          "APARTMENT",
+          "FLAT"
+        ],
+        "characteristics": {
+          "hasSewageSupply": true,
+          "numberOfToilets": 1,
+          "hasBalcony": true,
+          "distancePrimarySchool": 208,
+          "distancePublicTransport": 150,
+          "livingSpace": 69,
+          "numberOfRooms": 3,
+          "hasPowerSupply": true,
+          "floor": 1,
+          "distanceShop": 600,
+          "hasWaterSupply": true,
+          "yearBuilt": 1948
+        },
+        "id": "4003141011",
+        "localization": {
+          "de": {
+            "isMachineTranslated": false,
+            "text": {
+              "title": "Sch\u00f6ne Wohnung im \u00e4usseren Seefeld - befristet bis 30.09.2027",
+              "description": "Wir vermieten per 01.06.2026 eine 3 Zimmer-Wohnung, welche sich Stadtnah und in der N\u00e4he des Bellevue befindet.Die Wohnung ist wie folgt ausgestattet:- helles, offenes Wohnzimmer- Grossz\u00fcgige K\u00fcche- Ger\u00e4umiges Bad / WC- Sonniger Balkon- Kellerabteil- Waschk\u00fcche zur Mitbenutzung- Gute VerkehrsanbindungBitte beachten Sie, dass die Wohnung bis zum 30.09.2027 befristet ist.\u00a0*Bei den publizierten Bildern handelt es sich um Fotos von typen\u00e4hnlichen Wohnungen."
+            },
+            "attachments": [
+              {
+                "file": "ff0000000035671030.jpg",
+                "type": "IMAGE",
+                "title": "Aussenansicht",
+                "url": "https://media2.homegate.ch/listings/v2/h386799/4003141011/image/d63a88d4ba4a3588dfd837c759c54b7b.jpg"
+              },
+              {
+                "file": "ff0000000035671031.jpg",
+                "type": "IMAGE",
+                "title": "Eingangsbereich",
+                "url": "https://media2.homegate.ch/listings/v2/h386799/4003141011/image/73785f68ebeb40999448162907ca64a1.jpg"
+              },
+              {
+                "file": "ff0000000035671032.jpg",
+                "type": "IMAGE",
+                "title": "Wohnzimmer",
+                "url": "https://media2.homegate.ch/listings/v2/h386799/4003141011/image/bb3da925ffb07cfb9e9379739c33c235.jpg"
+              }
+            ]
+          },
+          "en": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Beautiful apartment in outer Seefeld - limited until 30.09.2027",
+              "description": "We rent from 01.06.2026 a 3-room apartment, which is located near the city and close to Bellevue.The apartment is equipped as follows:- bright, open living room- spacious kitchen- spacious bathroom / WC- sunny balcony- cellar compartment- laundry room for shared use- good transport linksPlease note that the apartment is limited until 30.09.2027.*The published pictures are photos of similar apartments."
+            },
+            "attachments": []
+          },
+          "it": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Bello appartamento nel Seefeld esterno - limitato fino al 30.09.2027",
+              "description": "Noleggiamo dal 01.06.2026 un appartamento di 3 camere, che si trova vicino alla citt\u00e0 e vicino a Bellevue.L'appartamento \u00e8 equipaggiato come segue:- soggiorno luminoso e aperto- cucina spaziosa- bagno / WC spazioso- balcone soleggiato- compartimento di cantina- lavanderia per uso condiviso- buoni collegamenti di trasportoSi prega di notare che l'appartamento \u00e8 limitato fino al 30.09.2027.*Le foto pubblicate sono foto di appartamenti simili."
+            },
+            "attachments": []
+          },
+          "fr": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Bel appartement dans le Seefeld ext\u00e9rieur - limit\u00e9 jusqu'au 30.09.2027",
+              "description": "Nous louons \u00e0 partir du 01.06.2026 un appartement de 3 pi\u00e8ces, qui se trouve pr\u00e8s de la ville et \u00e0 proximit\u00e9 de Bellevue.L'appartement est \u00e9quip\u00e9 comme suit:- salon lumineux et ouvert- cuisine spacieuse- salle de bain / WC spacieuse- balcon ensoleill\u00e9- compartiment de cave- buanderie \u00e0 usage partag\u00e9- bons transports en communVeuillez noter que l'appartement est limit\u00e9 jusqu'au 30.09.2027.*Les photos publi\u00e9es sont des photos d'appartements similaires."
+            },
+            "attachments": []
+          },
+          "primary": "de"
+        },
+        "meta": {
+          "createdAt": "2026-05-06T17:14:23.711Z"
+        },
+        "offerType": "RENT",
+        "platforms": [
+          "homegate",
+          "immoscout24",
+          "alleimmobilien",
+          "home",
+          "immostreet",
+          "anibis",
+          "tutti"
+        ],
+        "prices": {
+          "rent": {
+            "area": "ALL",
+            "interval": "MONTH",
+            "net": 900,
+            "gross": 1280,
+            "extra": 380
+          },
+          "currency": "CHF"
+        }
+      },
+      "listingCard": {
+        "size": "L"
+      },
+      "listingScores": {
+        "listingCompletenessScore": 4,
+        "packageScore": 4
+      },
+      "listerBranding": {
+        "logoUrl": "https://media2.homegate.ch/logos/l_h386799_082d9356-0ad8-4ee3-8472-a83ff3ecce56.png",
+        "isQualityPartner": false,
+        "subscriptionType": "Silver",
+        "isPremiumBranding": false,
+        "basePackage": "RE_SILVER"
+      }
+    },
+    {
+      "listingType": {
+        "type": "STANDARD"
+      },
+      "id": "4003145671",
+      "listing": {
+        "address": {
+          "geoCoordinates": {
+            "accuracy": "LOW",
+            "latitude": 47.398264874152,
+            "longitude": 8.546252311561
+          },
+          "locality": "Z\u00fcrich",
+          "postalCode": "8057"
+        },
+        "categories": [
+          "APARTMENT",
+          "FLAT"
+        ],
+        "characteristics": {
+          "numberOfRooms": 3.5,
+          "arePetsAllowed": true,
+          "totalFloorSpace": 73,
+          "hasBalcony": true
+        },
+        "id": "4003145671",
+        "localization": {
+          "de": {
+            "isMachineTranslated": false,
+            "text": {
+              "title": "4 Zimmerwohnung in Z\u00fcrich befristet f\u00fcr 7 Monate - 31.01.2027",
+              "description": "Befristete Wohnung in Z\u00fcrich n\u00e4he Bucheggplatz, die Wohnung bietet 4.5 Zimmer mit Blick ins Gr\u00fcne. Helle Wohnr\u00e4ume mit Blick ins Gr\u00fcne. Wohnzimmer mit direktem Zugang zum Balkon. Zwei Schlafzimmer, geeignet f\u00fcr Paare, kleine Haushalte oder Homeoffice. Separate K\u00fcche mit \u00fcblichen Ger\u00e4ten. Badezimmer funktional ausgestattet. \u00d6ffentlicher Verkehr und Einkaufsm\u00f6glichkeiten in kurzer Distanz erreichbar. Gute Anbindung an Z\u00fcrich und Flughafen. Das ist eine Projektank\u00fcndigung, wir werden uns mit neuen Informationen wieder bei Ihnen melden."
+            },
+            "attachments": [
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/z927/4003145671/image/1d0cac2610abcea593ab9add92293769.jpg",
+                "file": "ff0000000035712483.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/z927/4003145671/image/d211d5a125e7e1f07b45497242863684.jpg",
+                "file": "ff0000000035712484.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/z927/4003145671/image/5cf357805d9777caa901d4e1b58b22c3.jpg",
+                "file": "ff0000000035712485.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/z927/4003145671/image/7d575362b4215e50baa24d1d1ab951fa.jpg",
+                "file": "ff0000000035712486.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/z927/4003145671/image/c614d2337d6f35d9fb4739c0e2e95ebc.jpg",
+                "file": "ff0000000035712487.jpg"
+              },
+              {
+                "type": "IMAGE",
+                "url": "https://media2.homegate.ch/listings/v2/z927/4003145671/image/694a5a74e24881656db0cc336e475305.jpg",
+                "file": "ff0000000035712488.jpg"
+              }
+            ]
+          },
+          "en": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "4 bedroom apartment in Zurich for a limited time - 31.01.2027",
+              "description": "Temporary apartment in Zurich near Bucheggplatz, the apartment offers 4.5 rooms with a view of the greenery. Bright living rooms with a view of the greenery. Living room with direct access to the balcony. Two bedrooms, suitable for couples, small households or home office. Separate kitchen with usual appliances. Functionally equipped bathroom. Public transport and shopping facilities within short distance. Good connection to Zurich and airport. This is a project announcement, we will get back to you with new information."
+            },
+            "attachments": []
+          },
+          "it": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Appartamento di 4 camere a Zurigo per un periodo limitato - 31.01.2027",
+              "description": "Appartamento temporaneo a Zurigo vicino a Bucheggplatz, l'appartamento offre 4,5 locali con vista sul verde. Locali abitativi luminosi con vista sul verde. Salotto con accesso diretto al balcone. Due camere da letto, adatte a coppie, a nuclei familiari piccoli o per ufficio a casa. Cucina separata con elettrodomestici usuali. Bagno equipaggiato in modo funzionale. I trasporti pubblici e le possibilit\u00e0 di shopping sono raggiungibili a breve distanza. Buona connessione a Zurigo e all'aeroporto. Si tratta di un annuncio di progetto, ci metteremo di nuovo in contatto con voi con nuove informazioni."
+            },
+            "attachments": []
+          },
+          "fr": {
+            "isMachineTranslated": true,
+            "text": {
+              "title": "Appartement 4 pi\u00e8ces \u00e0 Zurich pour une dur\u00e9e limit\u00e9e - 31.01.2027",
+              "description": "Appartement temporaire \u00e0 Zurich pr\u00e8s de Bucheggplatz, l'appartement offre 4,5 pi\u00e8ces avec vue sur la verdure. Pi\u00e8ces de vie lumineuses avec vue sur la verdure. Salon avec acc\u00e8s direct au balcon. Deux chambres, adapt\u00e9es aux couples, aux petits m\u00e9nages ou au travail \u00e0 domicile. Cuisine s\u00e9par\u00e9e avec appareils usuels. Salle de bain \u00e9quip\u00e9e de mani\u00e8re fonctionnelle. Les transports en commun et les possibilit\u00e9s de shopping sont accessibles \u00e0 courte distance. Bonne connexion \u00e0 Zurich et \u00e0 l'a\u00e9roport. Il s'agit d'une annonce de projet, nous nous adresserons \u00e0 vous avec de nouvelles informations."
+            },
+            "attachments": []
+          },
+          "primary": "de"
+        },
+        "meta": {
+          "createdAt": "2026-05-08T10:20:35.156Z"
+        },
+        "offerType": "RENT",
+        "platforms": [
+          "homegate",
+          "immoscout24",
+          "alleimmobilien",
+          "home",
+          "immostreet",
+          "anibis",
+          "tutti"
+        ],
+        "prices": {
+          "rent": {
+            "area": "ALL",
+            "gross": 1590,
+            "interval": "MONTH"
+          },
+          "currency": "CHF"
+        }
+      },
+      "listingCard": {
+        "size": "M"
+      },
+      "listingScores": {
+        "listingCompletenessScore": 3,
+        "packageScore": 2
+      },
+      "listerBranding": {
+        "logoUrl": "https://media2.homegate.ch/t_customer_logo/logos/l_z927_v1.png",
+        "isQualityPartner": false,
+        "subscriptionType": "Bronze",
+        "isPremiumBranding": false,
+        "basePackage": "RE_BRONZE"
+      }
+    }
+  ],
+  "maxFrom": 310
+}

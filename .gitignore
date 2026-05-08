@@ -1,8 +1,22 @@
 .venv/
+venv/
 **/__pycache__/
+.pytest_cache/
 *.log
 cookies_homegate.txt
 cookies_flatfox.txt
 debug_*.py
 *.json
 *.html
+# Track committed test fixtures and API docs
+!tests/api/fixtures/*.json
+!docs/api/**/*.json
+!docs/api/**/*.html
+# Large binary captures stay local
+docs/api/har/*.har
+docs/api/har/*_final.html
+docs/api/har/*_final2.html
+docs/api/har/homegate_cookies.json
+docs/api/har/comparis_cookies.json
+docs/api/har/*_xhr.json
+docs/api/har/*_api_calls.json
