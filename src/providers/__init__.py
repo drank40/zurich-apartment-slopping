@@ -7,8 +7,21 @@ Each module exposes a Client class with:
 The Listing dataclass is the one defined in src.apartment_finder_llm.
 """
 
+from .common import Address, Agency, Listing, SearchCriteria
+from .comparis_api import ComparisClient
 from .flatfox_api import FlatfoxClient
 from .homegate_api import HomegateClient
-from .comparis_api import ComparisClient
+from .multi import fetch_listing, search_all, search_all_iter
 
-__all__ = ["FlatfoxClient", "HomegateClient", "ComparisClient"]
+__all__ = [
+    "Address",
+    "Agency",
+    "ComparisClient",
+    "FlatfoxClient",
+    "HomegateClient",
+    "Listing",
+    "SearchCriteria",
+    "fetch_listing",
+    "search_all",
+    "search_all_iter",
+]

@@ -376,7 +376,9 @@ class HomegateClient:
         return self._post_json(SEARCH_ENDPOINT, payload)
 
     def search(self, criteria: dict[str, Any], limit: int | None = None,
-               page_size: int = DEFAULT_PAGE_SIZE) -> list[dict[str, Any]]:
+               page_size: int = DEFAULT_PAGE_SIZE,
+               sort_by: str = "monthlyRent",
+               sort_direction: str = "asc") -> list[dict[str, Any]]:
         """Iterate the search endpoint until ``limit`` or ``maxFrom`` reached.
 
         ``criteria`` is the homegate-shaped query dict (see module docstring).
@@ -384,7 +386,10 @@ class HomegateClient:
         results: list[dict[str, Any]] = []
         from_ = 0
         while True:
-            page = self.search_page(criteria, from_=from_, size=page_size)
+            page = self.search_page(
+                criteria, from_=from_, size=page_size,
+                sort_by=sort_by, sort_direction=sort_direction,
+            )
             page_results = page.get("results", [])
             if not page_results:
                 break
@@ -430,8 +435,22 @@ class HomegateClient:
             return None
         return _homegate_to_normalized(item, fallback_id=listing_id)
 
-    def search_listings(self, criteria: "SearchCriteria") -> list["Listing"]:
-        """Run a search using the cross-provider ``SearchCriteria``."""
+    def search_listings(
+        self,
+        criteria: "SearchCriteria",
+        llm: bool = True,
+        llm_concurrency: int = 4,
+        tax: bool = True,
+        commute: bool = False,
+        google_maps_key: str | None = None,
+    ) -> list["Listing"]:
+        """Run a search using the cross-provider ``SearchCriteria``.
+
+        ``llm=True`` (default) post-enriches matched listings via Haiku
+        — fills ``bedrooms`` and ``has_washing_machine`` from descriptions
+        in parallel (capped at ``llm_concurrency``). Pass ``llm=False`` to
+        skip the LLM call entirely.
+        """
         from .common import Listing, SearchCriteria, apply_common_filters
         assert isinstance(criteria, SearchCriteria)
 
@@ -489,6 +508,11 @@ class HomegateClient:
             if f in feature_to_native:
                 q[feature_to_native[f]] = True
 
+        # Sort. Default = monthlyRent asc (cheapest first); polling
+        # watchers want newest first (dateCreated desc) — pulls fresh
+        # listings to the top.
+        sort_by = "dateCreated" if criteria.sort_by_newest else "monthlyRent"
+        sort_direction = "desc" if criteria.sort_by_newest else "asc"
         # Right-size the homegate page so we don't paginate when the caller
         # only wants a few results. Homegate caps ``size`` at ~100; we add
         # a buffer for client-side filtering attrition.
@@ -502,12 +526,28 @@ class HomegateClient:
         else:
             page_size = min(criteria.page_cap, 100)
             raw_cap = criteria.page_cap
-        raw = self.search(q, limit=raw_cap, page_size=page_size)
+        raw = self.search(
+            q, limit=raw_cap, page_size=page_size,
+            sort_by=sort_by, sort_direction=sort_direction,
+        )
         listings = [
             Listing.from_dict(_homegate_to_normalized(item))
             for item in raw
         ]
-        return apply_common_filters(listings, criteria)
+        result = apply_common_filters(listings, criteria)
+        if tax and result:
+            from .enrich import enrich_with_tax
+            enrich_with_tax(result)
+        if commute and result and google_maps_key:
+            from .enrich import enrich_with_commute
+            enrich_with_commute(result, google_maps_key)
+        if criteria.max_commute_min is not None:
+            from .common import filter_by_commute
+            result = filter_by_commute(result, criteria.max_commute_min)
+        if llm and result:
+            from .llm_extract import enrich_listings
+            result = enrich_listings(result, max_concurrency=llm_concurrency)
+        return result
 
 
 def _homegate_to_normalized(item: dict[str, Any], fallback_id: str | None = None) -> dict[str, Any]:

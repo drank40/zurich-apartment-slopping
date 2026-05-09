@@ -152,6 +152,7 @@ class Listing:
     available_from: Optional[str] = None  # ISO date string
     is_furnished: Optional[bool] = None
     is_temporary: Optional[bool] = None
+    has_washing_machine: Optional[bool] = None
     object_category: Optional[str] = None
     object_type: Optional[str] = None
     offer_type: Optional[str] = None
@@ -159,6 +160,9 @@ class Listing:
     images: list[str] = field(default_factory=list)
     attributes: list[str] = field(default_factory=list)
     agency: Agency = field(default_factory=Agency)
+    # Augmented by enrichers (see ``providers.enrich``):
+    municipality_tax_rate: Optional[float] = None
+    commute: Optional[dict[str, Any]] = None  # {depart, walk_min, walk_km, alternatives:[{modes,travel_min}]}
     raw: dict[str, Any] = field(default_factory=dict)
 
     # -- derived ----------------------------------------------------------
@@ -184,13 +188,21 @@ class Listing:
 
     @property
     def haystack(self) -> str:
-        """Lowercased searchable blob: title + description + attributes.
+        """Lowercased blob used by ``matches_keywords``.
 
-        Built once per call site; cheap, no caching needed.
+        Includes: title, description, canonical_attributes, address.public,
+        agency.name, agency.email, the slug-y part of the URL. Built fresh
+        per call site; cheap.
         """
-        parts = [self.title, self.description, " ".join(self.canonical_attributes)]
-        if self.address.public:
-            parts.append(self.address.public)
+        parts: list[str] = [
+            self.title or "",
+            self.description or "",
+            " ".join(self.canonical_attributes),
+            self.address.public or "",
+            self.agency.name or "",
+            self.agency.email or "",
+            self.url or "",
+        ]
         return " ".join(parts).lower()
 
     def matches_keywords(
@@ -328,10 +340,45 @@ class SearchCriteria:
     must_not_features: list[str] = field(default_factory=list)
     must_be_furnished: Optional[bool] = None    # None = don't care
     must_be_temporary: Optional[bool] = None
+    # Applied after commute enrichment (no-op when ``commute=False``).
+    # Listings whose best transit alternative exceeds this are dropped;
+    # listings with no commute info pass through (false-negative-safe).
+    max_commute_min: Optional[int] = None
 
     # Paging
     limit: Optional[int] = 20
     page_cap: int = 200  # max raw rows we'll fetch before giving up
+    sort_by_newest: bool = False  # True = newest first (good for polling)
+
+
+def best_commute_min(listing: "Listing") -> Optional[int]:
+    """Best (lowest) commute alternative in minutes, or None when missing."""
+    c = listing.commute or {}
+    alts = c.get("alternatives") or []
+    if not alts:
+        return None
+    travels = [a.get("travel_min") for a in alts if a.get("travel_min") is not None]
+    return min(travels) if travels else None
+
+
+def filter_by_commute(
+    listings: Iterable["Listing"], max_min: Optional[int],
+) -> list["Listing"]:
+    """Drop listings whose best commute exceeds ``max_min`` minutes.
+
+    ``None`` for the listing's commute (no coords, commute disabled, no
+    transit found) is kept so we don't false-negative when the API
+    couldn't tell us. Set the kwarg to ``None`` to skip the filter.
+    """
+    listings = list(listings)
+    if max_min is None:
+        return listings
+    out = []
+    for l in listings:
+        m = best_commute_min(l)
+        if m is None or m <= max_min:
+            out.append(l)
+    return out
 
 
 def apply_common_filters(

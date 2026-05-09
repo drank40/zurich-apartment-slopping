@@ -1,6 +1,7 @@
 import argparse
 import logging
 import re
+import sys
 import time
 import json
 from pathlib import Path
@@ -193,16 +194,28 @@ def contact_homegate(page, url: str, message: str, dry_run: bool = False):
                 page.wait_for_timeout(2000)
 
         # 3. Find and fill form
-        # Personal details (required if not fully logged in)
+        # Personal details (required if not fully logged in). Read from
+        # .creds (CONTACT_FIRST_NAME, CONTACT_LAST_NAME, CONTACT_EMAIL,
+        # CONTACT_PHONE, CONTACT_STREET, CONTACT_ZIP, CONTACT_CITY) so
+        # nothing identifying is committed.
+        try:
+            from creds import load_creds  # type: ignore
+        except ImportError:
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from creds import load_creds  # type: ignore
+        c = load_creds(Path(__file__).resolve().parent.parent / ".creds")
         details = {
-            "firstName": "Simone",
-            "lastName": "Mazzacano",
-            "email": "simoneitalia10@gmail.com",
-            "phone": "+39 3453043789",
-            "street": "Via Roma, 400",
-            "zip": "40100",
-            "city": "Bologna"
+            "firstName": c.get("CONTACT_FIRST_NAME", ""),
+            "lastName": c.get("CONTACT_LAST_NAME", ""),
+            "email": c.get("CONTACT_EMAIL", ""),
+            "phone": c.get("CONTACT_PHONE", ""),
+            "street": c.get("CONTACT_STREET", ""),
+            "zip": c.get("CONTACT_ZIP", ""),
+            "city": c.get("CONTACT_CITY", ""),
         }
+        if not details["email"]:
+            logger.error("Contact details missing in .creds; aborting.")
+            return False
         for name, value in details.items():
             field = page.locator(f'input[name="{name}"]').first
             if field.count() > 0:

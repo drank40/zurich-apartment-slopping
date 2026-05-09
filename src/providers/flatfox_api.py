@@ -153,18 +153,34 @@ class FlatfoxClient:
 
     # -- common-API search --------------------------------------------------
 
-    def search_listings(self, criteria: "SearchCriteria") -> list["Listing"]:
+    def search_listings(
+        self,
+        criteria: "SearchCriteria",
+        llm: bool = True,
+        llm_concurrency: int = 4,
+        tax: bool = True,
+        commute: bool = False,
+        google_maps_key: str | None = None,
+    ) -> list["Listing"]:
         """Run a search using the cross-provider ``SearchCriteria`` and
         return normalized ``Listing`` objects.
 
         Native filters (price, rooms, bbox, furnished/temporary, surface)
         are pushed into the ``/api/v1/pin/`` query. Keyword and feature
         filters are applied post-fetch on the normalized listings.
+
+        ``llm=True`` (default) post-enriches matched listings via Haiku
+        — fills ``bedrooms`` and ``has_washing_machine`` from descriptions
+        in parallel (capped at ``llm_concurrency``). Pass ``llm=False`` to
+        skip the LLM call entirely.
         """
         from .common import Listing, SearchCriteria, apply_common_filters  # local import: avoid cycles
         assert isinstance(criteria, SearchCriteria)
         # Translate criteria -> flatfox-native pin params.
-        ff: dict[str, Any] = {"max_count": min(criteria.page_cap, 1000)}
+        ff: dict[str, Any] = {
+            "max_count": min(criteria.page_cap, 1000),
+            "ordering": "-published" if criteria.sort_by_newest else "price_display",
+        }
         if criteria.bbox:
             s, w, n, e = criteria.bbox
             ff.update({"south": s, "west": w, "north": n, "east": e})
@@ -207,7 +223,20 @@ class FlatfoxClient:
             Listing.from_dict(_flatfox_to_normalized(item))
             for item in raw
         ]
-        return apply_common_filters(listings, criteria)
+        result = apply_common_filters(listings, criteria)
+        if tax and result:
+            from .enrich import enrich_with_tax
+            enrich_with_tax(result)
+        if commute and result and google_maps_key:
+            from .enrich import enrich_with_commute
+            enrich_with_commute(result, google_maps_key)
+        if criteria.max_commute_min is not None:
+            from .common import filter_by_commute
+            result = filter_by_commute(result, criteria.max_commute_min)
+        if llm and result:
+            from .llm_extract import enrich_listings
+            result = enrich_listings(result, max_concurrency=llm_concurrency)
+        return result
 
     # -- detail -------------------------------------------------------------
 
