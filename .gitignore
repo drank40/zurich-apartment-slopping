@@ -1,4 +1,5 @@
 .venv/
+venv/
 **/__pycache__/
 *.log
 cookies_homegate.txt

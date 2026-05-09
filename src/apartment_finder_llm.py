@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urljoin, urlparse, urlencode
 
 import requests
-from huggingface_hub import InferenceClient
+#from huggingface_hub import InferenceClient
 import yaml
 from bs4 import BeautifulSoup
 from dateutil import parser as dt_parser
@@ -33,6 +33,8 @@ try:
     from playwright.sync_api import sync_playwright
 except Exception:  # pragma: no cover
     sync_playwright = None
+
+from municipality_tax import MunicipalityTax
 
 # Regex patterns
 MONEY_REGEX = re.compile(r"(\d[\d'’‘,. ]*)")
@@ -77,6 +79,7 @@ class Listing:
     distance_km: Optional[float] = None
     travel_time_pt_min: Optional[int] = None # Public Transport
     walking_time_min: Optional[int] = None # Walking
+    mun_tax: Optional[float] = None  # ZH municipality tax rate (STF_O_KIRCHE1)
     raw: Dict[str, Any] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
 
@@ -443,48 +446,7 @@ def parse_listings_from_html_comparis(base_url: str, html: str) -> Tuple[List[Li
         except Exception as e: logger.debug(f"Comparis mapping failed: {e}")
     return [], False, 0
 
-def llm_extract_details(description: str, hf_token: str, model_id: str) -> Dict[str, Any]:
-    if not hf_token:
-        logger.warning("No LLM token found. Skipping LLM extraction.")
-        return {}
-    trimmed_desc = description[:2500]
-    system_prompt = (
-        "You are a structured data extractor. Analyze the apartment listing and output ONLY a valid JSON object. "
-        "No extra text, no markdown, no explanation."
-    )
-    user_prompt = (
-        f"Extract the following fields from this apartment listing.\n"
-        f"JSON Keys: furnished (bool), has_kitchen (bool), has_bathroom (bool), has_living_room (bool), "
-        f"has_sofa (bool), has_washing_machine (bool), has_dishwasher (bool), likely_shared (bool), "
-        f"is_temporary (bool, true if contract is time-limited, sublet, or has an end date), "
-        f"bedrooms (float), total_rooms (float), available_from (YYYY-MM-DD string or null).\n\n"
-        f"Listing:\n{trimmed_desc}"
-    )
-    logger.info(f"[LLM] Calling {model_id} via InferenceClient (desc length={len(trimmed_desc)} chars)")
-    try:
-        client = InferenceClient(api_key=hf_token)
-        response = client.chat.completions.create(
-            model=model_id,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            max_tokens=512,
-            temperature=0.1,
-        )
-        generated_text = response.choices[0].message.content or ""
-        logger.info(f"[LLM] Raw response (first 600 chars): {generated_text[:600]!r}")
-        clean_text = re.sub(r'<think>.*?</think>', '', generated_text, flags=re.DOTALL).strip()
-        json_match = re.search(r'\{.*\}', clean_text, re.DOTALL)
-        if not json_match:
-            logger.warning("[LLM] No JSON object found in response!")
-            return {}
-        parsed = json.loads(json_match.group(0))
-        logger.info(f"[LLM] Parsed result: {parsed}")
-        return parsed
-    except Exception as e:
-        logger.error(f"[LLM] Exception during LLM call: {e}")
-        return {}
+# LLM extraction removed. Keyword-only path is the only mode now.
 
 def generate_html_dashboard(listings: List[Listing], output_path: Path, message_template: str):
     listings_html = []
@@ -492,6 +454,7 @@ def generate_html_dashboard(listings: List[Listing], output_path: Path, message_
         price_str = f"CHF {l.price_chf:,.0f}".replace(",", "'") if l.price_chf else "Unknown"
         pt = f"{l.travel_time_pt_min}m" if l.travel_time_pt_min else "?"
         walk = f"{l.walking_time_min}m" if l.walking_time_min else "?"
+        commute_str = f"{l.distance_km:.2f} km" if l.distance_km is not None else "Unknown"
         listings_html.append(f"""
         <div class="card listing-card provider-{l.provider}">
             <div class="card-body">
@@ -501,7 +464,7 @@ def generate_html_dashboard(listings: List[Listing], output_path: Path, message_
                 </div>
                 <h6 class="card-subtitle mb-2 text-muted">{l.address or "Address unknown"}</h6>
                 <p class="card-text">
-                    <strong>Commute:</strong> {l.distance_km:.2f} km (PT: {pt}, Walk: {walk})<br>
+                    <strong>Commute:</strong> {commute_str} (PT: {pt}, Walk: {walk})<br>
                     <strong>Rooms:</strong> {l.total_rooms or "?"} | <strong>Bedrooms:</strong> {l.bedrooms or "?"}<br>
                     <strong>Available:</strong> {l.available_from or "Unknown"}<br>
                     <span class="badge bg-light text-dark">Provider: {l.provider}</span>
@@ -525,14 +488,35 @@ def generate_html_dashboard(listings: List[Listing], output_path: Path, message_
     function contactListing(url, index) {{ navigator.clipboard.writeText(message).then(() => {{ const b = document.getElementById('btn-' + index); b.innerText = "✅ Copied!"; b.classList.replace('btn-danger', 'btn-success'); window.open(url, '_blank'); setTimeout(() => {{ b.innerText = "⚡ Contact & Copy"; b.classList.replace('btn-success', 'btn-danger'); }}, 3000); }}); }}</script></body></html>"""
     output_path.write_text(html_content, encoding="utf-8")
 
-def hydrate_details(listings: List[Listing], timeout: int, delay: float, llm_cfg: Dict[str, Any], google_key: str = "", use_llm: bool = True, session: Optional[requests.Session] = None, playwright_cfg: Optional[Dict[str, Any]] = None):
+def _format_filtered_md_block(l: "Listing") -> str:
+    price = f"CHF {l.price_chf:,.0f}".replace(",", "'") if l.price_chf else "Unknown"
+    commute = f"PT: {l.travel_time_pt_min}m" if l.travel_time_pt_min else ""
+    walk = f"Walk: {l.walking_time_min}m" if l.walking_time_min else ""
+    commute_info = f" ({commute}{', ' if commute and walk else ''}{walk})" if commute or walk else ""
+    dist_line = f"- **Commute to Office**: {l.distance_km:.2f} km{commute_info}" if l.distance_km is not None else "- **Distance**: Unknown"
+    tax_line = f"- **Municipality tax**: {l.mun_tax:.0f}" if l.mun_tax is not None else "- **Municipality tax**: Unknown"
+    return "\n".join([f"## {l.title}", f"- **Price**: {price}", f"- **Provider**: {l.provider}", dist_line, tax_line, f"- [View]({l.url})", ""]) + "\n"
+
+
+def _format_excluded_md_block(l: "Listing", reasons: List[str]) -> str:
+    return "\n".join([f"## {l.title}", f"- **REASONS**: {', '.join(reasons)}", f"- **Provider**: {l.provider}", f"- [View]({l.url})", ""]) + "\n"
+
+
+def _stream_verdict(l: "Listing", criteria: Dict[str, Any], filtered_path: Path, excluded_path: Path):
+    p, r = listing_passes_filters(l, criteria)
+    target = filtered_path if p else excluded_path
+    block = _format_filtered_md_block(l) if p else _format_excluded_md_block(l, r)
+    with target.open("a", encoding="utf-8") as f:
+        f.write(block)
+        f.flush()
+    logger.info(f"[verdict] {'KEEP' if p else 'DROP'} {l.title[:40]} -> {target.name}{'' if p else ' (' + ', '.join(r) + ')'}")
+
+
+def hydrate_details(listings: List[Listing], timeout: int, delay: float, google_key: str = "", session: Optional[requests.Session] = None, playwright_cfg: Optional[Dict[str, Any]] = None, on_listing_done: Optional[Any] = None, mun_tax: Optional[MunicipalityTax] = None):
     SHARED_KEYWORDS = ["mitbewohner", "wg-zimmer", "wohngemeinschaft", "shared flat", "stanza in", "roommate", "coloc"]
     TEMP_KEYWORDS = ["befristet", "untermiete", "sublet", "temporary", "short term", "fino al", "bis zum"]
     total = len(listings)
-    hf_token = llm_cfg.get("token") if use_llm else None
-    model_id = llm_cfg.get("model_id")
-    mode = "Hybrid LLM" if use_llm else "keyword-only (LLM disabled)"
-    logger.info(f"Hydrating {total} listings [{mode}]...")
+    logger.info(f"Hydrating {total} listings [keyword-only]...")
     _session = session or requests.Session()
     _session.headers.update({"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36", "Accept-Language": "de-CH,de;q=0.9,en;q=0.8"})
 
@@ -559,13 +543,39 @@ def hydrate_details(listings: List[Listing], timeout: int, delay: float, llm_cfg
         pw_context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined}); window.chrome = { runtime: {} };")
         if cookies: pw_context.add_cookies(cookies)
 
+    def _ensure_pw_alive():
+        nonlocal pw_browser, pw_context, playwright_obj
+        if not (playwright_cfg and playwright_cfg.get("enabled", False) and sync_playwright):
+            return
+        ok = False
+        try:
+            ok = pw_browser is not None and pw_browser.is_connected() and pw_context is not None
+        except Exception:
+            ok = False
+        if ok:
+            return
+        logger.warning("Playwright browser died; relaunching.")
+        try:
+            if pw_browser: pw_browser.close()
+        except Exception: pass
+        try:
+            if playwright_obj: playwright_obj.stop()
+        except Exception: pass
+        playwright_obj = sync_playwright().start()
+        headless = bool(playwright_cfg.get("headless", True))
+        pw_browser = playwright_obj.chromium.launch(headless=headless)
+        pw_context = pw_browser.new_context(user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36", viewport={'width': 1920, 'height': 1080})
+        pw_context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined}); window.chrome = { runtime: {} };")
+
     try:
         for idx, l in enumerate(listings, 1):
             try:
                 logger.info(f"[{idx}/{total}] Processing ({l.provider}): {l.title[:30]}...")
                 if l.description == "" or l.lat is None:
+                    page = None
                     try:
                         if pw_context:
+                            _ensure_pw_alive()
                             page = pw_context.new_page()
                             page.goto(l.url, wait_until="domcontentloaded", timeout=timeout*1000)
                             page.wait_for_timeout(2000)
@@ -575,7 +585,6 @@ def hydrate_details(listings: List[Listing], timeout: int, delay: float, llm_cfg
                                 logger.warning(f"Bot challenge on {l.url}. Waiting...")
                                 page.wait_for_timeout(int(challenge_wait * 1000))
                                 html = page.content()
-                            page.close()
                             soup = BeautifulSoup(html, "html.parser")
                             for s in soup(["script", "style"]): s.decompose()
                             l.description = normalize_spaces(soup.get_text(" ", strip=True))[:4000]
@@ -594,8 +603,12 @@ def hydrate_details(listings: List[Listing], timeout: int, delay: float, llm_cfg
                             else:
                                 logger.warning(f"[{r.status_code}] Could not fetch details for {l.url} (will use search-result data only)")
                     except Exception as ex:
-                        logger.error(f"Error getting details for {l.url}: {ex}") 
-                
+                        logger.error(f"Error getting details for {l.url}: {ex}")
+                    finally:
+                        if page is not None:
+                            try: page.close()
+                            except Exception: pass
+
                 if l.lat and l.lon:
                     l.distance_km = haversine(l.lat, l.lon, OFFICE_LAT, OFFICE_LON)
                     l.travel_time_pt_min = get_swiss_transport_time(l.lat, l.lon, l.address)
@@ -610,36 +623,20 @@ def hydrate_details(listings: List[Listing], timeout: int, delay: float, llm_cfg
                 if any(k in desc_lower for k in SHARED_KEYWORDS): l.likely_shared = True
                 if any(k in desc_lower for k in TEMP_KEYWORDS): l.is_temporary = True
                 
-                if use_llm:
-                    data = llm_extract_details(l.description if l.description else l.title, hf_token, model_id)
-                    l.likely_shared = l.likely_shared or data.get("likely_shared", False)
-                    l.is_temporary = l.is_temporary or data.get("is_temporary", False)
-                    l.furnished = data.get("furnished", l.furnished)
-                    l.has_kitchen = data.get("has_kitchen", l.has_kitchen)
-                    l.has_living_room = data.get("has_living_room", l.has_living_room)
-                    l.has_sofa = data.get("has_sofa", l.has_sofa)
-                    l.has_washing_machine = data.get("has_washing_machine", l.has_washing_machine)
-                    l.has_dishwasher = data.get("has_dishwasher", l.has_dishwasher)
-                    
-                    detail_price = parse_price(l.description)
-                    if detail_price and 400 <= detail_price <= 10000:
-                        if l.price_chf is None or detail_price < l.price_chf:
-                            l.price_chf = detail_price
-                    elif l.price_chf is None: 
-                        l.price_chf = parse_price(l.title)
-                        
-                    if l.available_from is None: l.available_from = parse_date(data.get("available_from")) or parse_date(l.description)
-                    if l.bedrooms is None: l.bedrooms = data.get("bedrooms")
-                else:
-                    detail_price = parse_price(l.description)
-                    if detail_price and 400 <= detail_price <= 10000:
-                        if l.price_chf is None or detail_price < l.price_chf:
-                            l.price_chf = detail_price
-                    elif l.price_chf is None:
-                        l.price_chf = parse_price(l.title)
-                        
-                    if l.available_from is None: l.available_from = parse_date(l.description)
-                    if l.bedrooms is None and l.total_rooms: l.bedrooms = max(1.0, l.total_rooms - 1.0)
+                detail_price = parse_price(l.description)
+                if detail_price and 400 <= detail_price <= 10000:
+                    if l.price_chf is None or detail_price < l.price_chf:
+                        l.price_chf = detail_price
+                elif l.price_chf is None:
+                    l.price_chf = parse_price(l.title)
+
+                if l.available_from is None: l.available_from = parse_date(l.description)
+                if l.bedrooms is None and l.total_rooms: l.bedrooms = max(1.0, l.total_rooms - 1.0)
+                if l.mun_tax is None and mun_tax is not None:
+                    l.mun_tax = mun_tax.lookup_from_address(l.address or "")
+                if on_listing_done is not None:
+                    try: on_listing_done(l)
+                    except Exception as cb_ex: logger.error(f"on_listing_done callback failed for {l.url}: {cb_ex}")
                 time.sleep(delay)
             except Exception as e: logger.error(f"Error {l.url}: {e}")
     finally:
@@ -674,21 +671,22 @@ def listing_passes_filters(listing: Listing, criteria: Dict[str, Any]) -> Tuple[
         if actual_val is False: reasons.append(error_msg)
     return len(reasons) == 0, reasons
 
-def run(config_path: Path, providers_override: Optional[List[str]] = None, limit: Optional[int] = None, use_llm: Optional[bool] = None):
+def run(config_path: Path, providers_override: Optional[List[str]] = None, limit: Optional[int] = None):
     cfg = load_config(config_path)
     search_cfg = cfg.get("search", {})
     criteria = cfg.get("criteria", {})
-    llm_cfg = cfg.get("llm", {})
-    # use_llm: CLI flag overrides config; config key overrides default (True)
-    if use_llm is None:
-        use_llm = bool(llm_cfg.get("enabled", True))
-    logger.info(f"LLM extraction: {'ENABLED' if use_llm else 'DISABLED'}")
     google_key = cfg.get("google_maps_api_key", "")
     msg_path = Path(cfg.get("contact", {}).get("message_template_path", "message_template.txt"))
     msg_template = msg_path.read_text(encoding="utf-8") if msg_path.exists() else "No template found."
     output_dir = Path(search_cfg.get("output_dir", "output"))
     output_dir.mkdir(parents=True, exist_ok=True)
+    md_path = output_dir / "listings_filtered_llm.md"
+    excl_path = output_dir / "listings_excluded_llm.md"
+    md_path.write_text("# Zurich Apartment Results — streaming\n\n", encoding="utf-8")
+    excl_path.write_text("# Excluded — streaming\n\n", encoding="utf-8")
     all_listings: List[Listing] = []
+    stream_cb = lambda l: _stream_verdict(l, criteria, md_path, excl_path)
+    mun_tax_lookup = MunicipalityTax()
     providers = providers_override or search_cfg.get("providers", [])
     for provider in providers:
         if provider not in search_cfg: continue
@@ -738,7 +736,7 @@ def run(config_path: Path, providers_override: Optional[List[str]] = None, limit
             logger.info(f"[{provider}] Loaded cookies into detail session for {domain}")
         
         provider_pw_cfg = p_cfg.get("playwright") if p_cfg.get("use_playwright_fallback") else None
-        hydrate_details(provider_listings, 20, 1.0, llm_cfg, google_key, use_llm=use_llm, session=detail_session, playwright_cfg=provider_pw_cfg)
+        hydrate_details(provider_listings, 20, 1.0, google_key, session=detail_session, playwright_cfg=provider_pw_cfg, on_listing_done=stream_cb, mun_tax=mun_tax_lookup)
         all_listings.extend(provider_listings)
         if limit and len(all_listings) >= limit: break
     filtered, excluded = [], []
@@ -747,21 +745,10 @@ def run(config_path: Path, providers_override: Optional[List[str]] = None, limit
         if p: filtered.append(l)
         else: excluded.append((l, r))
     ordered = sorted(filtered, key=lambda x: (x.price_chf or 999999), reverse=True)
-    md_path = output_dir / "listings_filtered_llm.md"
-    lines = ["# Zurich Apartment Results (LLM Mode)", ""]
-    for l in ordered:
-        price = f"CHF {l.price_chf:,.0f}".replace(",", "'") if l.price_chf else "Unknown"
-        commute = f"PT: {l.travel_time_pt_min}m" if l.travel_time_pt_min else ""
-        walk = f"Walk: {l.walking_time_min}m" if l.walking_time_min else ""
-        commute_info = f" ({commute}{', ' if commute and walk else ''}{walk})" if commute or walk else ""
-        lines.extend([f"## {l.title}", f"- **Price**: {price}", f"- **Provider**: {l.provider}", f"- **Commute to Office**: {l.distance_km:.2f} km{commute_info}" if l.distance_km else "- **Distance**: Unknown", f"- [View]({l.url})", ""])
-    md_path.write_text("\n".join(lines), encoding="utf-8")
+    md_path.write_text("# Zurich Apartment Results\n\n" + "".join(_format_filtered_md_block(l) for l in ordered), encoding="utf-8")
     html_path = output_dir / "dashboard.html"
     generate_html_dashboard(ordered, html_path, msg_template)
-    excl_path = output_dir / "listings_excluded_llm.md"
-    excl_lines = ["# Excluded (LLM Mode)", ""]
-    for l, r in excluded: excl_lines.extend([f"## {l.title}", f"- **REASONS**: {', '.join(r)}", f"- **Provider**: {l.provider}", f"- [View]({l.url})", ""])
-    excl_path.write_text("\n".join(excl_lines), encoding="utf-8")
+    excl_path.write_text("# Excluded\n\n" + "".join(_format_excluded_md_block(l, r) for l, r in excluded), encoding="utf-8")
     logger.info(f"Done. Filtered: {len(filtered)}. Dashboard: {html_path}")
 
 if __name__ == "__main__":
@@ -769,10 +756,6 @@ if __name__ == "__main__":
     parser.add_argument("--config", default="config.yaml")
     parser.add_argument("--providers")
     parser.add_argument("--limit", type=int)
-    parser.add_argument("--no-llm", dest="no_llm", action="store_true",
-                        help="Disable LLM extraction; use keyword matching only")
     args = parser.parse_args()
     selected = [p.strip().lower() for p in args.providers.split(",")] if args.providers else None
-    # None means "defer to config"; False means "forced off via CLI"
-    use_llm_flag = False if args.no_llm else None
-    run(Path(args.config), selected, args.limit, use_llm=use_llm_flag)
+    run(Path(args.config), selected, args.limit)
