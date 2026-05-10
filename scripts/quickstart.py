@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from creds import load_creds
-from providers import SearchCriteria, search_all_iter
+from providers import SearchCriteria, score_listing, search_all_iter
 
 AVAILABLE_BY = "2026-07-15"   # ISO; known-late listings are dropped
 
@@ -89,8 +89,9 @@ for l in stream:
     optional_hits = sorted(set(l.canonical_attributes) & OPTIONAL_FEATURES)
     if l.has_washing_machine and "washing_machine" not in optional_hits:
         optional_hits.append("washing_machine")
+    score = score_listing(l)
 
-    print(f"\n{l.provider.upper()}  CHF {l.price_chf}  {l.rooms}rm  ({l.bedrooms} bed)  {l.surface_living_m2}m²")
+    print(f"\n{l.provider.upper()}  score {score.total}/100  CHF {l.price_chf}  {l.rooms}rm  ({l.bedrooms} bed)  {l.surface_living_m2}m²")
     print(f"  {l.title}")
     print(f"  {l.address.public}  ({l.address.lat}, {l.address.lon})")
     print(f"  features      : {l.canonical_attributes}")
@@ -99,6 +100,12 @@ for l in stream:
     print(f"  temporary     : {l.is_temporary}")
     print(f"  available     : {l.available_from}    (cutoff {AVAILABLE_BY})")
     print(f"  tax_rate (ZH) : {l.municipality_tax_rate}")
+    print(
+        "  score parts   : "
+        f"commute={score.commute} tax={score.tax} outdoor/view={score.outdoor_view} "
+        f"size={score.size} washing={score.washing_machine} "
+        f"quality={score.quality} value={score.value} conf={score.confidence}"
+    )
     if l.commute and l.commute.get("alternatives"):
         b = l.commute["alternatives"][0]
         print(f"  commute to HB : {b['travel_min']} min  ({' → '.join(b['modes'])})")

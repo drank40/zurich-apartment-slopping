@@ -24,11 +24,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from creds import load_creds
 from providers import Listing, SearchCriteria, search_all_iter
+from providers.scoring import score_csv_row, score_dict
 
 DEFAULT_CSV = Path("output/listings.csv")
 
 CSV_FIELDS = [
     "seen_at",
+    "listing_score", "score_confidence",
     "provider", "listing_id", "url", "title",
     "price_chf", "rent_net_chf", "rent_charges_chf",
     "rooms", "bedrooms", "surface_living_m2", "floor", "year_built",
@@ -43,8 +45,11 @@ CSV_FIELDS = [
 def _row(l: Listing, seen_at: str) -> dict[str, object]:
     c = l.commute or {}
     alt = (c.get("alternatives") or [{}])[0] if c.get("alternatives") else {}
+    score = score_dict(l)
     return {
         "seen_at": seen_at,
+        "listing_score": score["listing_score"],
+        "score_confidence": score["score_confidence"],
         "provider": l.provider,
         "listing_id": l.listing_id,
         "url": l.url,
@@ -89,12 +94,44 @@ def load_seen(csv_path: Path) -> set[tuple[str, str]]:
 def append_listing(csv_path: Path, listing: Listing, seen_at: str) -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     new_file = not csv_path.exists()
+    fieldnames = CSV_FIELDS
+    if not new_file:
+        fieldnames = ensure_csv_schema(csv_path)
     with csv_path.open("a", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=CSV_FIELDS)
+        w = csv.DictWriter(f, fieldnames=fieldnames)
         if new_file:
             w.writeheader()
         w.writerow(_row(listing, seen_at))
         f.flush()
+
+
+def ensure_csv_schema(csv_path: Path) -> list[str]:
+    """Add missing known columns to an existing CSV header.
+
+    Existing unknown columns are preserved. This keeps old poll CSVs readable
+    after adding ``listing_score`` and is future-friendly for contact-tracking
+    columns that may be added by another script.
+    """
+    with csv_path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        existing_fields = reader.fieldnames or []
+        if all(field in existing_fields for field in CSV_FIELDS):
+            return existing_fields
+        rows = list(reader)
+
+    upgraded_fields = existing_fields + [field for field in CSV_FIELDS if field not in existing_fields]
+    tmp_path = csv_path.with_suffix(csv_path.suffix + ".tmp")
+    with tmp_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=upgraded_fields, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            if not row.get("listing_score") or not row.get("score_confidence"):
+                score = score_csv_row(row)
+                row["listing_score"] = score["listing_score"]
+                row["score_confidence"] = score["score_confidence"]
+            writer.writerow({field: row.get(field, "") for field in upgraded_fields})
+    tmp_path.replace(csv_path)
+    return upgraded_fields
 
 
 def build_criteria() -> SearchCriteria:

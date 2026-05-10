@@ -12,6 +12,7 @@ from .comparis_api import ComparisClient
 from .flatfox_api import FlatfoxClient
 from .homegate_api import HomegateClient
 from .multi import fetch_listing, search_all, search_all_iter
+from .scoring import listing_score, score_csv_row, score_listing
 
 __all__ = [
     "Address",
@@ -22,6 +23,9 @@ __all__ = [
     "Listing",
     "SearchCriteria",
     "fetch_listing",
+    "listing_score",
+    "score_csv_row",
+    "score_listing",
     "search_all",
     "search_all_iter",
 ]

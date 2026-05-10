@@ -326,6 +326,7 @@ class Listing:
             available_from=available_from,
             is_furnished=d.get("is_furnished"),
             is_temporary=d.get("is_temporary"),
+            has_washing_machine=d.get("has_washing_machine"),
             object_category=d.get("object_category"),
             object_type=d.get("object_type"),
             offer_type=d.get("offer_type"),
