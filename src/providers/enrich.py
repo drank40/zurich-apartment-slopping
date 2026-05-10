@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 # Default tax CSV — same path the original repo uses. Override via the
 # ``tax_csv`` argument or by symlinking.
-DEFAULT_TAX_CSV = Path("/home/renny/doc/suisse/tax/tax.csv")
+DEFAULT_TAX_CSV = Path("./datasets/tax.csv")
 
 
 def enrich_with_tax(
