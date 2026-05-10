@@ -203,6 +203,10 @@ class FlatfoxClient:
             ff["is_temporary"] = True
         elif criteria.must_be_temporary is False:
             ff["is_temporary"] = False
+        if criteria.must_be_swap is True:
+            ff["is_swap"] = True
+        elif criteria.must_be_swap is False:
+            ff["is_swap"] = False
 
         raw = self.search(ff, limit=criteria.page_cap)
         # Filter to apartments/houses (flatfox's pin can include PARK etc.)
@@ -227,17 +231,17 @@ class FlatfoxClient:
         if tax and result:
             from .enrich import enrich_with_tax
             enrich_with_tax(result)
+        if llm and result:
+            from .llm_extract import enrich_listings
+            result = enrich_listings(result, max_concurrency=llm_concurrency)
+            from .common import filter_by_availability
+            result = filter_by_availability(result, criteria.available_on_or_before)
         if commute and result and google_maps_key:
             from .enrich import enrich_with_commute
             enrich_with_commute(result, google_maps_key)
         if criteria.max_commute_min is not None:
             from .common import filter_by_commute
             result = filter_by_commute(result, criteria.max_commute_min)
-        if llm and result:
-            from .llm_extract import enrich_listings
-            result = enrich_listings(result, max_concurrency=llm_concurrency)
-            from .common import filter_by_availability
-            result = filter_by_availability(result, criteria.available_on_or_before)
         return result
 
     # -- detail -------------------------------------------------------------

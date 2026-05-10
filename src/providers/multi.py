@@ -24,7 +24,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from typing import Iterator, TYPE_CHECKING
 
-from .common import Listing
+from .common import Listing, filter_by_commute
 from .flatfox_api import FlatfoxClient
 from .homegate_api import HomegateClient
 
@@ -117,9 +117,19 @@ def search_all_iter(
     provider_kw = dict(
         llm=False,                    # we run LLM ourselves below
         tax=tax,
-        commute=commute,
+        commute=False,                 # commute runs after LLM/date filters below
         google_maps_key=google_maps_key,
     )
+
+    def _commute_one(listing: "Listing") -> "Listing" | None:
+        if commute and google_maps_key:
+            from .enrich import enrich_with_commute
+            enrich_with_commute([listing], google_maps_key)
+        if criteria.max_commute_min is not None:
+            filtered = filter_by_commute([listing], criteria.max_commute_min)
+            if not filtered:
+                return None
+        return listing
 
     raw_q: "queue.Queue[object]" = queue.Queue()
 
@@ -152,7 +162,9 @@ def search_all_iter(
             if item is _SENTINEL:
                 done += 1
                 continue
-            yield item  # type: ignore[misc]
+            enriched = _commute_one(item)  # type: ignore[arg-type]
+            if enriched is not None:
+                yield enriched
         return
 
     # ---- LLM-enriched stream ------------------------------------------
@@ -179,7 +191,9 @@ def search_all_iter(
             listing.has_washing_machine = meta["has_washing_machine"]
         if is_available_after_cutoff(listing, criteria.available_on_or_before):
             return
-        enriched_q.put(listing)
+        enriched = _commute_one(listing)
+        if enriched is not None:
+            enriched_q.put(enriched)
 
     def _dispatch() -> None:
         # Workers run on a cap-ed thread pool; raw rows are routed in

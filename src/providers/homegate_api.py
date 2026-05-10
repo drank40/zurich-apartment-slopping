@@ -490,6 +490,10 @@ class HomegateClient:
             if criteria.max_surface_m2 is not None:
                 s["to"] = criteria.max_surface_m2
             q["livingSpace"] = s
+        if criteria.must_be_furnished is not None:
+            q["isFurnished"] = criteria.must_be_furnished
+        if criteria.must_be_temporary is not None:
+            q["isTemporary"] = criteria.must_be_temporary
         # Push canonical features into homegate's native top-level booleans.
         # Anything not in this map falls through to the client-side filter.
         feature_to_native = {
@@ -538,17 +542,17 @@ class HomegateClient:
         if tax and result:
             from .enrich import enrich_with_tax
             enrich_with_tax(result)
+        if llm and result:
+            from .llm_extract import enrich_listings
+            result = enrich_listings(result, max_concurrency=llm_concurrency)
+            from .common import filter_by_availability
+            result = filter_by_availability(result, criteria.available_on_or_before)
         if commute and result and google_maps_key:
             from .enrich import enrich_with_commute
             enrich_with_commute(result, google_maps_key)
         if criteria.max_commute_min is not None:
             from .common import filter_by_commute
             result = filter_by_commute(result, criteria.max_commute_min)
-        if llm and result:
-            from .llm_extract import enrich_listings
-            result = enrich_listings(result, max_concurrency=llm_concurrency)
-            from .common import filter_by_availability
-            result = filter_by_availability(result, criteria.available_on_or_before)
         return result
 
 

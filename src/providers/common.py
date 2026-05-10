@@ -395,6 +395,7 @@ class SearchCriteria:
     must_not_features: list[str] = field(default_factory=list)
     must_be_furnished: Optional[bool] = None    # None = don't care
     must_be_temporary: Optional[bool] = None
+    must_be_swap: Optional[bool] = False
     # Applied after commute enrichment (no-op when ``commute=False``).
     # Listings whose best transit alternative exceeds this are dropped;
     # listings with no commute info pass through (false-negative-safe).
