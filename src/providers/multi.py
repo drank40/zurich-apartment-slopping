@@ -22,7 +22,7 @@ import queue
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from typing import Iterator, TYPE_CHECKING
+from typing import Callable, Iterator, TYPE_CHECKING
 
 from .common import Listing, filter_by_commute
 from .flatfox_api import FlatfoxClient
@@ -86,25 +86,25 @@ def search_all_iter(
     tax: bool = True,
     commute: bool = False,
     google_maps_key: str | None = None,
+    skip_seen: set[tuple[str, str]] | None = None,
+    on_skip_seen: Callable[["Listing"], None] | None = None,
 ) -> Iterator["Listing"]:
     """Yield ``Listing`` objects as they arrive from either provider.
 
-    Real-time: a listing is yielded as soon as its non-LLM enrichers
-    (tax + commute) finish, then LLM enrichment runs in the background
-    on a worker pool and the listing is yielded again with the LLM
-    fields filled in. (No, the listing is yielded **once**, after LLM —
-    see the simple flow below.)
+    Real-time: each listing is yielded once after the enabled enrichers
+    and filters finish. When ``skip_seen`` is provided, already-known
+    listings are dropped before expensive LLM and commute work.
 
     Concretely the pipeline is:
 
-      1. Both providers fetch in parallel; tax + commute applied per row.
+      1. Both providers fetch in parallel; tax is applied per row.
       2. Each filtered row is pushed onto a queue.
       3. If ``llm=True``: a dispatcher pulls from that queue and spawns
-         a worker per row (capped at ``llm_concurrency``); workers run
-         the Haiku call and emit the row to a downstream queue.
-      4. If ``llm=False``: rows pass straight through.
+         a worker per unseen row (capped at ``llm_concurrency``); workers
+         run the LLM/date filters, then commute runs only for survivors.
+      4. If ``llm=False``: unseen rows pass through after optional commute.
       5. The generator yields from the final queue until both providers
-         and all LLM workers are done.
+         and all workers are done.
 
     HomegateClient is held inside the homegate producer thread, so its
     Playwright + datadome session lives until iteration ends.
@@ -132,6 +132,14 @@ def search_all_iter(
         return listing
 
     raw_q: "queue.Queue[object]" = queue.Queue()
+    skip_seen = skip_seen or set()
+
+    def _is_seen(listing: "Listing") -> bool:
+        if (listing.provider, str(listing.listing_id)) not in skip_seen:
+            return False
+        if on_skip_seen:
+            on_skip_seen(listing)
+        return True
 
     def _produce_flatfox() -> None:
         try:
@@ -161,6 +169,8 @@ def search_all_iter(
             item = raw_q.get()
             if item is _SENTINEL:
                 done += 1
+                continue
+            if _is_seen(item):  # type: ignore[arg-type]
                 continue
             enriched = _commute_one(item)  # type: ignore[arg-type]
             if enriched is not None:
@@ -207,6 +217,8 @@ def search_all_iter(
                 if item is _SENTINEL:
                     done += 1
                     continue
+                if _is_seen(item):  # type: ignore[arg-type]
+                    continue
                 futures.append(pool.submit(_llm_one, item))  # type: ignore[arg-type]
             for f in futures:
                 f.result()
@@ -229,6 +241,7 @@ def search_all(
     tax: bool = True,
     commute: bool = False,
     google_maps_key: str | None = None,
+    skip_seen: set[tuple[str, str]] | None = None,
 ) -> list["Listing"]:
     """Drain :func:`search_all_iter` into a list.
 
@@ -243,4 +256,5 @@ def search_all(
         tax=tax,
         commute=commute,
         google_maps_key=google_maps_key,
+        skip_seen=skip_seen,
     ))

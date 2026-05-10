@@ -149,9 +149,20 @@ def run_once(
     ``target_new`` long before the iterator finishes.
     """
     seen = load_seen(csv_path)
+    n_seen_early = 0
+
+    def _mark_seen(_listing: Listing) -> None:
+        nonlocal n_seen_early
+        n_seen_early += 1
+
     n_new = n_seen = n_filtered = 0
     for l in search_all_iter(
-        crit, llm=llm, commute=commute, google_maps_key=google_key,
+        crit,
+        llm=llm,
+        commute=commute,
+        google_maps_key=google_key,
+        skip_seen=seen,
+        on_skip_seen=_mark_seen,
     ):
         if l.bedrooms is not None and l.bedrooms < min_bedrooms:
             n_filtered += 1
@@ -176,8 +187,8 @@ def run_once(
         if n_new >= target_new:
             break
     print(
-        f"  scanned: {n_new + n_seen + n_filtered}  "
-        f"({n_new} new, {n_seen} dup, {n_filtered} filtered)",
+        f"  scanned: {n_new + n_seen + n_seen_early + n_filtered}  "
+        f"({n_new} new, {n_seen + n_seen_early} dup, {n_filtered} filtered)",
         flush=True,
     )
     return n_new
