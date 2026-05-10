@@ -8,6 +8,7 @@ Tax + commute enrichers run by default (commute needs GOOGLE_MAPS_KEY in
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -23,7 +24,10 @@ if len(urls) != 1:
     print(__doc__, file=sys.stderr)
     sys.exit(2)
 
-google_key = load_creds(Path(__file__).resolve().parent.parent / ".creds").get("GOOGLE_MAPS_KEY")
+google_key = (
+    load_creds(Path(__file__).resolve().parent.parent / ".creds").get("GOOGLE_MAPS_KEY")
+    or os.environ.get("GOOGLE_MAPS_KEY")
+)
 listing = fetch_listing(urls[0], llm=llm, google_maps_key=google_key)
 if listing is None:
     print("ERROR: empty detail", file=sys.stderr)

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
 import sys
 import time
 from datetime import datetime
@@ -200,7 +201,10 @@ def main() -> int:
     )
     args = p.parse_args()
 
-    google_key = load_creds(Path(__file__).resolve().parent.parent / ".creds").get("GOOGLE_MAPS_KEY")
+    google_key = (
+        load_creds(Path(__file__).resolve().parent.parent / ".creds").get("GOOGLE_MAPS_KEY")
+        or os.environ.get("GOOGLE_MAPS_KEY")
+    )
     crit = build_criteria()
     if args.max_commute_min is not None:
         from dataclasses import replace

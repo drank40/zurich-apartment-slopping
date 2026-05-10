@@ -9,6 +9,7 @@ on the streamed Listing objects.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -64,7 +65,10 @@ KEEP_UNKNOWNS = True
 AVAILABLE_BY = "2026-07-15"   # ISO; only used to print a flag, not to drop
 OPTIONAL_FEATURES = {"washing_machine", "dishwasher"}
 
-google_key = load_creds(Path(__file__).resolve().parent.parent / ".creds").get("GOOGLE_MAPS_KEY")
+google_key = (
+    load_creds(Path(__file__).resolve().parent.parent / ".creds").get("GOOGLE_MAPS_KEY")
+    or os.environ.get("GOOGLE_MAPS_KEY")
+)
 stream = search_all_iter(
     crit,
     llm="--no-llm" not in sys.argv,

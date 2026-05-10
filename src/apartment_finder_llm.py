@@ -2,6 +2,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import re
 import time
 import math
@@ -15,6 +16,7 @@ import requests
 #from huggingface_hub import InferenceClient
 import yaml
 from bs4 import BeautifulSoup
+from creds import load_creds
 from dateutil import parser as dt_parser
 from requests import Response
 
@@ -799,7 +801,12 @@ def run(config_path: Path, providers_override: Optional[List[str]] = None, limit
     if use_llm is None:
         use_llm = bool(llm_cfg.get("enabled", True))
     logger.info(f"LLM extraction: {'ENABLED' if use_llm else 'DISABLED'}")
-    google_key = cfg.get("google_maps_api_key", "")
+    google_key = (
+        cfg.get("google_maps_api_key", "")
+        or criteria.get("google_maps_api_key", "")
+        or load_creds(Path(__file__).resolve().parent.parent / ".creds").get("GOOGLE_MAPS_KEY", "")
+        or os.environ.get("GOOGLE_MAPS_KEY", "")
+    )
     msg_path = Path(cfg.get("contact", {}).get("message_template_path", "message_template.txt"))
     msg_template = msg_path.read_text(encoding="utf-8") if msg_path.exists() else "No template found."
     output_dir = Path(search_cfg.get("output_dir", "output"))
