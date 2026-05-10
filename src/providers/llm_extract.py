@@ -23,6 +23,8 @@ What we extract from the free-text description:
   buried in the description even when the structured ``isTemporary``
   field is null.
 * ``has_washing_machine`` — in-unit washing machine vs shared laundry.
+* ``available_from`` — explicit move-in / entry / availability dates when
+  the provider's structured field is missing.
 
 Model: Haiku. Single message, JSON-only response. Robust regex parser
 for the JSON in case the model adds prose around it.
@@ -42,6 +44,7 @@ from typing import Any, Iterable, Optional, TYPE_CHECKING, TypedDict
 from claude_agent_sdk import query
 
 from ._agent import Agent
+from .common import infer_available_from_text, normalize_date
 
 if TYPE_CHECKING:
     from .common import Listing
@@ -54,9 +57,14 @@ Output ONLY a single JSON object on one line, with these exact keys:
 - "has_washing_machine":   boolean | null   (true if ANY laundry access exists,
                                              in-unit OR shared/laundry-service)
 - "is_furnished":          boolean | null   (true if the unit comes with furniture)
+- "available_from":        string | null    (YYYY-MM-DD move-in / entry / availability date)
 
 Rules:
 - Use null when the description does not say. Do NOT guess.
+- Extract available_from ONLY from explicit availability/move-in language
+  such as "available from", "move-in", "entry date", "enter date",
+  "Bezug ab", "Einzug ab", "verfügbar ab", "frei ab", or equivalents.
+  Do not use viewing dates, publication dates, renovation dates, or lease end dates.
 - A "studio" / "1-Zimmer" with a sleeping alcove counts as 0 bedrooms.
 - Convention: total rooms = bedrooms + 1 living room. Half-rooms (e.g. 3.5)
   do NOT count as bedrooms unless explicitly described as a sleeping room.
@@ -81,6 +89,7 @@ class ListingMeta(TypedDict, total=False):
     is_temporary: Optional[bool]
     has_washing_machine: Optional[bool]
     is_furnished: Optional[bool]
+    available_from: Optional[str]
 
 
 def _get_agent() -> Agent:
@@ -133,6 +142,7 @@ def _parse(raw: str) -> ListingMeta:
         "is_temporary": None,
         "has_washing_machine": None,
         "is_furnished": None,
+        "available_from": None,
     }
     if not raw:
         return none
@@ -148,6 +158,7 @@ def _parse(raw: str) -> ListingMeta:
         "is_temporary": _coerce_bool(d.get("is_temporary")),
         "has_washing_machine": _coerce_bool(d.get("has_washing_machine")),
         "is_furnished": _coerce_bool(d.get("is_furnished")),
+        "available_from": normalize_date(d.get("available_from")),
     }
 
 
@@ -164,12 +175,23 @@ def extract_listing_meta(description: str) -> ListingMeta:
             "is_temporary": None,
             "has_washing_machine": None,
             "is_furnished": None,
+            "available_from": None,
         }
+    text_date = infer_available_from_text(description)
     try:
         raw = _get_agent()(description.strip())
     except Exception:
-        return {"bedrooms": None, "is_temporary": None, "has_washing_machine": None}
-    return _parse(raw)
+        return {
+            "bedrooms": None,
+            "is_temporary": None,
+            "has_washing_machine": None,
+            "is_furnished": None,
+            "available_from": text_date,
+        }
+    parsed = _parse(raw)
+    if parsed.get("available_from") is None and text_date:
+        parsed["available_from"] = text_date
+    return parsed
 
 
 # ---------------------------------------------------------------------------
@@ -187,9 +209,11 @@ async def _extract_async(description: str) -> ListingMeta:
         "is_temporary": None,
         "has_washing_machine": None,
         "is_furnished": None,
+        "available_from": None,
     }
     if not description or not description.strip():
         return none
+    text_date = infer_available_from_text(description)
     agent = _get_agent()
     out: list[str] = []
     try:
@@ -200,8 +224,12 @@ async def _extract_async(description: str) -> ListingMeta:
             if hasattr(msg, "result") and msg.result:
                 out.append(msg.result)
     except Exception:
+        none["available_from"] = text_date
         return none
-    return _parse("\n".join(out))
+    parsed = _parse("\n".join(out))
+    if parsed.get("available_from") is None and text_date:
+        parsed["available_from"] = text_date
+    return parsed
 
 
 async def _enrich_async(
@@ -223,6 +251,8 @@ async def _enrich_async(
             l.is_temporary = meta["is_temporary"]
         if l.is_furnished is None and meta.get("is_furnished") is not None:
             l.is_furnished = meta["is_furnished"]
+        if l.available_from is None and meta.get("available_from") is not None:
+            l.available_from = meta["available_from"]
         if meta.get("has_washing_machine") is not None:
             l.has_washing_machine = meta["has_washing_machine"]
         return l

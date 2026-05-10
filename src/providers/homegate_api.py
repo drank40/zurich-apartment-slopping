@@ -547,6 +547,8 @@ class HomegateClient:
         if llm and result:
             from .llm_extract import enrich_listings
             result = enrich_listings(result, max_concurrency=llm_concurrency)
+            from .common import filter_by_availability
+            result = filter_by_availability(result, criteria.available_on_or_before)
         return result
 
 

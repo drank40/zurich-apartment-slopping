@@ -156,6 +156,7 @@ def search_all_iter(
         return
 
     # ---- LLM-enriched stream ------------------------------------------
+    from .common import is_available_after_cutoff
     from .llm_extract import extract_listing_meta
 
     enriched_q: "queue.Queue[object]" = queue.Queue()
@@ -172,8 +173,12 @@ def search_all_iter(
             listing.is_temporary = meta["is_temporary"]
         if listing.is_furnished is None and meta.get("is_furnished") is not None:
             listing.is_furnished = meta["is_furnished"]
+        if listing.available_from is None and meta.get("available_from") is not None:
+            listing.available_from = meta["available_from"]
         if meta.get("has_washing_machine") is not None:
             listing.has_washing_machine = meta["has_washing_machine"]
+        if is_available_after_cutoff(listing, criteria.available_on_or_before):
+            return
         enriched_q.put(listing)
 
     def _dispatch() -> None:

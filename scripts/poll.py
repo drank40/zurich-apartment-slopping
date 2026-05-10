@@ -126,6 +126,7 @@ def build_criteria() -> SearchCriteria:
         limit=200,
         page_cap=200,
         sort_by_newest=True,
+        available_on_or_before="2026-07-15",
         max_commute_min=30,                       # ≤30 min transit to Zurich HB
     )
 

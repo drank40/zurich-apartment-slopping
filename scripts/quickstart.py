@@ -18,6 +18,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from creds import load_creds
 from providers import SearchCriteria, search_all_iter
 
+AVAILABLE_BY = "2026-07-15"   # ISO; known-late listings are dropped
+
 # ---------------------------------------------------------------------------
 # Hard criteria — these go into the provider queries directly.
 #
@@ -53,6 +55,7 @@ crit = SearchCriteria(
         "blueground" # i hate blueground
     ],
     must_features=[],                             # no specific feature gate
+    available_on_or_before=AVAILABLE_BY,
     max_commute_min=30,                           # ≤30 min transit to Zurich HB (needs commute=True)
     limit=20,                                     # raw pull; we'll soft-filter below
 )
@@ -62,7 +65,6 @@ crit = SearchCriteria(
 # true" → keep listings whose bedroom count we couldn't infer.
 MIN_BEDROOMS = 2
 KEEP_UNKNOWNS = True
-AVAILABLE_BY = "2026-07-15"   # ISO; only used to print a flag, not to drop
 OPTIONAL_FEATURES = {"washing_machine", "dishwasher"}
 
 google_key = (

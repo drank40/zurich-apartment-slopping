@@ -12,7 +12,10 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field, asdict
+from datetime import date
 from typing import Any, Iterable, Optional
+
+from dateutil import parser as dt_parser
 
 # Provider-specific attribute names → canonical vocabulary.
 # Sources of truth:
@@ -108,6 +111,56 @@ FEATURE_MAP: dict[str, str] = {
 
 def _canonical(attr: str) -> str:
     return FEATURE_MAP.get(attr, attr)
+
+
+_DATE_VALUE_RE = (
+    r"(\d{4}-\d{1,2}-\d{1,2}|"
+    r"\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|"
+    r"\d{1,2}\s+[A-Za-zÄÖÜäöüéèêàâîôû]+\s+\d{2,4})"
+)
+_AVAILABLE_CONTEXT_RE = re.compile(
+    r"(?:available|availability|move[- ]?in|entry|enter\s+date|start\s+date|"
+    r"bezug|einzug|verf[üu]gbar|frei\s+ab|disponible|"
+    r"date\s+d['’]entr[ée]e)\D{0,35}" + _DATE_VALUE_RE,
+    re.I,
+)
+
+
+def normalize_date(value: Any) -> Optional[str]:
+    """Return ``YYYY-MM-DD`` when ``value`` clearly parses as a date."""
+    if not value:
+        return None
+    if isinstance(value, date):
+        return value.isoformat()
+    text = str(value).strip()
+    if not text:
+        return None
+    iso = re.search(r"\d{4}-\d{1,2}-\d{1,2}", text)
+    if iso:
+        try:
+            return dt_parser.parse(iso.group(0), dayfirst=False).date().isoformat()
+        except (TypeError, ValueError, OverflowError):
+            return None
+    try:
+        return dt_parser.parse(text, dayfirst=True, fuzzy=True).date().isoformat()
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def infer_available_from_text(text: str) -> Optional[str]:
+    """Extract a high-confidence move-in date from free text.
+
+    This intentionally requires an availability/move-in cue near the date so
+    unrelated viewing, publication, renovation, or appointment dates do not
+    become false exclusions.
+    """
+    if not text:
+        return None
+    for match in _AVAILABLE_CONTEXT_RE.finditer(text):
+        parsed = normalize_date(match.group(1))
+        if parsed:
+            return parsed
+    return None
 
 
 @dataclass
@@ -249,12 +302,14 @@ class Listing:
     def from_dict(cls, d: dict[str, Any]) -> "Listing":
         addr = d.get("address") or {}
         ag = d.get("agency") or {}
+        description = d.get("description") or ""
+        available_from = normalize_date(d.get("available_from")) or infer_available_from_text(description)
         return cls(
             provider=d["provider"],
             listing_id=d["listing_id"],
             url=d["url"],
             title=d.get("title") or "",
-            description=d.get("description") or "",
+            description=description,
             price_chf=d.get("price_chf"),
             rent_net_chf=d.get("rent_net_chf"),
             rent_charges_chf=d.get("rent_charges_chf"),
@@ -268,7 +323,7 @@ class Listing:
             floor=d.get("floor"),
             year_built=d.get("year_built"),
             year_renovated=d.get("year_renovated"),
-            available_from=d.get("available_from"),
+            available_from=available_from,
             is_furnished=d.get("is_furnished"),
             is_temporary=d.get("is_temporary"),
             object_category=d.get("object_category"),
@@ -344,6 +399,9 @@ class SearchCriteria:
     # Listings whose best transit alternative exceeds this are dropped;
     # listings with no commute info pass through (false-negative-safe).
     max_commute_min: Optional[int] = None
+    # Drop only when a structured or high-confidence inferred date is known
+    # and later than this cutoff. Unknown dates pass through.
+    available_on_or_before: Optional[str] = None
 
     # Paging
     limit: Optional[int] = 20
@@ -381,6 +439,23 @@ def filter_by_commute(
     return out
 
 
+def is_available_after_cutoff(listing: "Listing", cutoff: Optional[str]) -> bool:
+    """True only when both dates parse and listing availability is later."""
+    target = normalize_date(cutoff)
+    available = normalize_date(listing.available_from)
+    return bool(target and available and available > target)
+
+
+def filter_by_availability(
+    listings: Iterable["Listing"],
+    cutoff: Optional[str],
+) -> list["Listing"]:
+    """Keep unknown dates; drop known dates after ``cutoff``."""
+    if not cutoff:
+        return list(listings)
+    return [l for l in listings if not is_available_after_cutoff(l, cutoff)]
+
+
 def apply_common_filters(
     listings: Iterable[Listing], criteria: SearchCriteria
 ) -> list[Listing]:
@@ -414,6 +489,8 @@ def apply_common_filters(
         if criteria.min_surface_m2 and (l.surface_living_m2 or 0) < criteria.min_surface_m2:
             continue
         if criteria.max_surface_m2 and l.surface_living_m2 and l.surface_living_m2 > criteria.max_surface_m2:
+            continue
+        if is_available_after_cutoff(l, criteria.available_on_or_before):
             continue
         out.append(l)
         if criteria.limit and len(out) >= criteria.limit:
