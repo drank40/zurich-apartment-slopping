@@ -9,6 +9,7 @@ each iteration only logs and stores new finds. Each row is timestamped at
     python scripts/poll.py --csv output/picks.csv     # custom path
     python scripts/poll.py --once                     # single pass then exit
     python scripts/poll.py --no-llm --no-commute      # cheap mode
+    python scripts/poll.py --contact --contact-send   # contact new rows after each pass
 """
 from __future__ import annotations
 
@@ -127,8 +128,10 @@ def ensure_csv_schema(csv_path: Path) -> list[str]:
         for row in rows:
             if not row.get("listing_score") or not row.get("score_confidence"):
                 score = score_csv_row(row)
-                row["listing_score"] = score["listing_score"]
-                row["score_confidence"] = score["score_confidence"]
+                if not row.get("listing_score"):
+                    row["listing_score"] = score["listing_score"]
+                if not row.get("score_confidence"):
+                    row["score_confidence"] = score["score_confidence"]
             writer.writerow({field: row.get(field, "") for field in upgraded_fields})
     tmp_path.replace(csv_path)
     return upgraded_fields
@@ -248,10 +251,25 @@ def main() -> int:
         "--target-new", type=int, default=20,
         help="Stop scanning per pass once this many new listings have been added",
     )
+    p.add_argument(
+        "--contact", action="store_true",
+        help="After each pass, contact uncontacted rows first seen in that pass. Dry-run unless --contact-send is set.",
+    )
+    p.add_argument(
+        "--contact-send", action="store_true",
+        help="Actually send DMs/contact forms. Without this, --contact only logs dry-run actions.",
+    )
+    p.add_argument("--contact-provider", action="append", choices=["flatfox", "homegate"])
+    p.add_argument("--contact-limit-per-pass", type=int, default=5)
+    p.add_argument("--contact-min-score", type=float, default=None)
+    p.add_argument("--contact-message-template", type=Path, default=Path("message_template.txt"))
+    p.add_argument("--contact-headed", action="store_true", help="Show browser for browser-based contact providers")
     args = p.parse_args()
 
+    creds_path = Path(__file__).resolve().parent.parent / ".creds"
+    creds = load_creds(creds_path)
     google_key = (
-        load_creds(Path(__file__).resolve().parent.parent / ".creds").get("GOOGLE_MAPS_KEY")
+        creds.get("GOOGLE_MAPS_KEY")
         or os.environ.get("GOOGLE_MAPS_KEY")
     )
     crit = build_criteria()
@@ -269,12 +287,17 @@ def main() -> int:
     print(
         f"Polling every {args.interval} min into {args.csv}\n"
         f"  llm={kw['llm']}  commute={kw['commute']}  min_bedrooms={kw['min_bedrooms']}\n"
+        f"  contact={args.contact}  contact_send={args.contact_send}\n"
         f"  total previously seen: {len(load_seen(args.csv))}",
         flush=True,
     )
+    contact_message = None
+    if args.contact:
+        from contacting import load_message
+        contact_message = load_message(args.contact_message_template)
     while True:
-        ts = datetime.now().isoformat(timespec="seconds")
-        print(f"\n=== poll @ {ts} ===", flush=True)
+        poll_started = datetime.now()
+        print(f"\n=== poll @ {poll_started.isoformat(timespec='seconds')} ===", flush=True)
         try:
             n = run_once(crit, args.csv, **kw)
         except Exception as exc:
@@ -282,6 +305,28 @@ def main() -> int:
             n = 0
         total = len(load_seen(args.csv))
         print(f"  {n} new this pass (CSV total: {total})", flush=True)
+        if args.contact and contact_message:
+            try:
+                from contacting import process_contact_csv
+                summary = process_contact_csv(
+                    args.csv,
+                    contact_message,
+                    creds_path=creds_path,
+                    dry_run=not args.contact_send,
+                    providers=set(args.contact_provider or []) or None,
+                    limit=args.contact_limit_per_pass,
+                    min_score=args.contact_min_score,
+                    seen_since=poll_started,
+                    headless=not args.contact_headed,
+                )
+                mode = "LIVE SEND" if args.contact_send else "dry-run"
+                print(
+                    f"  contact {mode}: selected={summary.selected} sent={summary.sent} "
+                    f"dry_run={summary.dry_run} failed={summary.failed} skipped={summary.skipped}",
+                    flush=True,
+                )
+            except Exception as exc:
+                print(f"  contact error: {exc}", flush=True)
         if args.once:
             return 0
         try:
