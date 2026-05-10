@@ -85,7 +85,7 @@ def enrich_with_tax(
 def enrich_with_commute(
     listings: Iterable["Listing"],
     google_maps_key: str,
-    dest: tuple[float, float] | None = None,
+    dest: tuple[float, float] | str | None = None,
 ) -> list["Listing"]:
     """Populate ``Listing.commute`` via Google Routes API.
 
@@ -93,12 +93,12 @@ def enrich_with_commute(
     Listings without coordinates are skipped. Failures are caught
     per-listing so one bad geocode doesn't kill the batch.
     """
-    from maps import Commuter, ZURICH_HB  # top-level src/ module
+    from maps import Commuter, ZURICH_HB_NAME  # top-level src/ module
     listings = list(listings)
     if not google_maps_key:
         logger.info("No GOOGLE_MAPS_KEY; skipping commute enrichment.")
         return listings
-    c = Commuter(google_maps_key, dest=dest or ZURICH_HB)
+    c = Commuter(google_maps_key, dest=dest or ZURICH_HB_NAME)
     for l in listings:
         if l.commute is not None:
             continue
