@@ -48,9 +48,9 @@ TOTAL_ROOMS_REGEX = re.compile(
     re.IGNORECASE,
 )
 
-# Reference office coordinates: Europaallee 1, Zurich
-OFFICE_LAT = 47.3781
-OFFICE_LON = 8.5342
+# Reference coordinates: ETH Zurich main campus (Zentrum / HG), Ramistrasse 101, 8092
+ETH_LAT = 47.3764
+ETH_LON = 8.5479
 
 @dataclass
 class Listing:
@@ -387,7 +387,7 @@ def parse_listings_from_html_homegate(base_url: str, html: str) -> Tuple[List[Li
                 addr = listing_data.get("address", {})
                 geo = addr.get("geoCoordinates") or addr.get("geo") or _find_key_recursive(item, "geoCoordinates")
                 lat, lon = (geo.get("latitude") or geo.get("lat"), geo.get("longitude") or geo.get("lon")) if geo else (None, None)
-                dist = haversine(lat, lon, OFFICE_LAT, OFFICE_LON) if lat and lon else None
+                dist = haversine(lat, lon, ETH_LAT, ETH_LON) if lat and lon else None
                 listings.append(Listing(
                     provider="homegate", listing_id=str(id_),
                     title=listing_data.get("localization", {}).get("de", {}).get("text", {}).get("title") or listing_data.get("title") or "Homegate Listing",
@@ -599,14 +599,14 @@ def hydrate_details(listings: List[Listing], timeout: int, delay: float, llm_cfg
                         logger.error(f"Error getting details for {l.url}: {ex}") 
                 
                 if l.lat and l.lon:
-                    l.distance_km = haversine(l.lat, l.lon, OFFICE_LAT, OFFICE_LON)
+                    l.distance_km = haversine(l.lat, l.lon, ETH_LAT, ETH_LON)
                     l.travel_time_pt_min = get_swiss_transport_time(l.lat, l.lon, l.address)
                     if google_key:
-                        pt, walk = get_google_maps_times(l.lat, l.lon, OFFICE_LAT, OFFICE_LON, google_key)
+                        pt, walk = get_google_maps_times(l.lat, l.lon, ETH_LAT, ETH_LON, google_key)
                         l.travel_time_pt_min = pt or l.travel_time_pt_min
                         l.walking_time_min = walk
                     elif l.distance_km < 2.5:
-                        l.walking_time_min = get_osrm_walking_time(l.lat, l.lon, OFFICE_LAT, OFFICE_LON)
+                        l.walking_time_min = get_osrm_walking_time(l.lat, l.lon, ETH_LAT, ETH_LON)
                 
                 desc_lower = l.description.lower() or l.title.lower()
                 if any(k in desc_lower for k in SHARED_KEYWORDS): l.likely_shared = True
@@ -891,7 +891,7 @@ def run(config_path: Path, providers_override: Optional[List[str]] = None, limit
         p, r = listing_passes_filters(l, criteria)
         if p: filtered.append(l)
         else: excluded.append((l, r))
-    ordered = sorted(filtered, key=lambda x: (x.price_chf or 999999), reverse=True)
+    ordered = sorted(filtered, key=lambda x: (x.distance_km if x.distance_km is not None else 9e9))
     md_path = output_dir / "listings_filtered_llm.md"
     lines = ["# Zurich Apartment Results (LLM Mode)", ""]
     for l in ordered:
@@ -899,7 +899,7 @@ def run(config_path: Path, providers_override: Optional[List[str]] = None, limit
         commute = f"PT: {l.travel_time_pt_min}m" if l.travel_time_pt_min else ""
         walk = f"Walk: {l.walking_time_min}m" if l.walking_time_min else ""
         commute_info = f" ({commute}{', ' if commute and walk else ''}{walk})" if commute or walk else ""
-        lines.extend([f"## {l.title}", f"- **Price**: {price}", f"- **Provider**: {l.provider}", f"- **Commute to Office**: {l.distance_km:.2f} km{commute_info}" if l.distance_km else "- **Distance**: Unknown", f"- [View]({l.url})", ""])
+        lines.extend([f"## {l.title}", f"- **Price**: {price}", f"- **Provider**: {l.provider}", f"- **Distance to ETH**: {l.distance_km:.2f} km{commute_info}" if l.distance_km else "- **Distance**: Unknown", f"- [View]({l.url})", ""])
     md_path.write_text("\n".join(lines), encoding="utf-8")
     html_path = output_dir / "dashboard.html"
     generate_html_dashboard(ordered, html_path, msg_template)

@@ -14,10 +14,10 @@ search:
       SiteId: 0
       RootPropertyTypes: []
       PropertyTypes: []
-      RoomsFrom: "3"
-      PriceTo: "3600"
+      RoomsFrom: "1"
+      PriceTo: "1500"
       Radius: "6"
-      LocationSearchString: "8004"
+      LocationSearchString: "8006"
       Sort: 11
       SwapProperty: 1
       MinAvailableDate: "1753-01-01T00:00:00"
@@ -37,18 +37,19 @@ search:
     # Zurich Search parameters
     base_url: "https://flatfox.ch/it/search/"
     params:
-      query: "Europaallee"
-      place_name: "Europaallee, 8004 Zurich, Switzerland"
-      north: 47.42
-      south: 47.32
-      east: 8.63
-      west: 8.45
-      min_rooms: 3
+      query: "ETH Zurich"
+      place_name: "ETH Zurich, Ramistrasse 101, 8092 Zurich, Switzerland"
+      # Box centered on ETH Zurich Zentrum (47.376, 8.548), ~3-4 km radius
+      north: 47.41
+      south: 47.34
+      east: 8.60
+      west: 8.50
+      min_rooms: 1
       is_furnished: "true"
       is_swap: "false"
       ordering: "price_display"
       take: 1000
-      max_price: 3600
+      max_price: 1500
       is_temporary: "false"
     request_timeout_seconds: 30
     detail_request_delay_seconds: 1.0 # Be gentle to avoid blocks
@@ -64,8 +65,8 @@ search:
   homegate:
     base_url: "https://www.homegate.ch/rent/real-estate/city-zurich/matching-list"
     params:
-      ac: 3 # min rooms
-      ah: 3600 # max price
+      ac: 1 # min rooms
+      ah: 1500 # max price
     # Optional: add browser-like headers/cookies if anti-bot blocks direct requests
     # request_headers:
     #   Accept-Language: "en-US,en;q=0.9"
@@ -95,9 +96,9 @@ llm:
 
 criteria:
   center:
-    label: "Europaallee, 8004 Zurich"
-  max_price: 3600
-  min_bedrooms: 2
+    label: "ETH Zurich (Zentrum), 8092 Zurich"
+  max_price: 1500
+  min_bedrooms: 1
   must_be_furnished: true
   must_have_private_entire_place: true # No shared/WG
   must_be_indefinite: true # Exclude sublets/temporary

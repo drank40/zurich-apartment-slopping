@@ -135,21 +135,14 @@ def ensure_csv_schema(csv_path: Path) -> list[str]:
 
 
 def build_criteria() -> SearchCriteria:
-    """Same criteria as quickstart — Zurich + lake shore + close north belt."""
+    """Single student near ETH Zurich: furnished own place, ≤ CHF 1'500,
+    bbox tight around ETH Zentrum (47.376, 8.548, ~3-4 km)."""
     return SearchCriteria(
         offer_type="RENT",
-        cities=[
-            "Zurich",
-            "Kilchberg", "Rüschlikon", "Thalwil", "Horgen",
-            "Zollikon", "Küsnacht", "Erlenbach", "Herrliberg", "Meilen",
-            "Zumikon", "Uetikon am See",
-            "Adliswil",
-            "Wallisellen", "Opfikon", "Dübendorf",
-        ],
-        bbox=(47.25, 8.43, 47.46, 8.66),
-        min_rooms=3,
-        min_price_chf=2000,
-        max_price_chf=3600,
+        cities=["Zurich"],
+        bbox=(47.34, 8.50, 47.41, 8.60),          # (south, west, north, east) around ETH
+        min_rooms=1,
+        max_price_chf=1500,
         must_be_furnished=True,
         must_be_temporary=False,
         exclude_keywords=[
@@ -164,7 +157,7 @@ def build_criteria() -> SearchCriteria:
         page_cap=200,
         sort_by_newest=True,
         available_on_or_before="2026-07-15",
-        max_commute_min=30,                       # ≤30 min transit to Zurich HB
+        max_commute_min=30,                       # ≤30 min transit to Zurich HB (no-op without Google key)
     )
 
 
@@ -175,7 +168,7 @@ def run_once(
     llm: bool,
     commute: bool,
     google_key: str | None,
-    min_bedrooms: int = 2,
+    min_bedrooms: int = 1,
     target_new: int = 20,
 ) -> int:
     """Stream until we've added ``target_new`` rows or the iterator drains.
@@ -196,6 +189,7 @@ def run_once(
     for l in search_all_iter(
         crit,
         llm=llm,
+        tax=False,
         commute=commute,
         google_maps_key=google_key,
         skip_seen=seen,
@@ -238,7 +232,7 @@ def main() -> int:
     p.add_argument("--once", action="store_true", help="Single pass then exit")
     p.add_argument("--no-llm", action="store_true")
     p.add_argument("--no-commute", action="store_true")
-    p.add_argument("--min-bedrooms", type=int, default=2)
+    p.add_argument("--min-bedrooms", type=int, default=1)
     p.add_argument(
         "--max-commute-min", type=int, default=None,
         help="Drop listings whose best transit commute to Zurich HB exceeds this. "
