@@ -168,7 +168,7 @@ def run_once(
     llm: bool,
     commute: bool,
     google_key: str | None,
-    min_bedrooms: int = 1,
+    min_bedrooms: int = 0,
     target_new: int = 20,
 ) -> int:
     """Stream until we've added ``target_new`` rows or the iterator drains.
@@ -232,7 +232,7 @@ def main() -> int:
     p.add_argument("--once", action="store_true", help="Single pass then exit")
     p.add_argument("--no-llm", action="store_true")
     p.add_argument("--no-commute", action="store_true")
-    p.add_argument("--min-bedrooms", type=int, default=1)
+    p.add_argument("--min-bedrooms", type=int, default=0)
     p.add_argument(
         "--max-commute-min", type=int, default=None,
         help="Drop listings whose best transit commute to Zurich HB exceeds this. "
