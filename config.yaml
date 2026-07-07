@@ -106,7 +106,7 @@ criteria:
   must_have_bathroom: true
   must_have_living_room: true
   must_have_sofa: false
-  available_on_or_before: "2026-07-15"
+  available_on_or_before: "2026-10-01"
   include_unknowns_to_avoid_false_negatives: true # Safer for fuzzy matching
   optional_features:
     - washing_machine
